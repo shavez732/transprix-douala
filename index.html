@@ -7,18 +7,28 @@
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f7f9fa; margin: 0; padding: 15px; color: #333; }
         .container { max-width: 450px; background: white; margin: 10px auto; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
-        h1 { color: #e67e22; font-size: 26px; margin-bottom: 5px; }
-        p.subtitle { color: #7f8c8d; font-size: 14px; margin-top: 0; margin-bottom: 20px; }
+        h1 { color: #e67e22; font-size: 26px; margin-bottom: 5px; text-align: center; }
+        p.subtitle { color: #7f8c8d; font-size: 14px; margin-top: 0; margin-bottom: 20px; text-align: center; }
+        
+        .search-container { position: relative; margin-top: 5px; }
         label { font-weight: bold; display: block; margin-top: 15px; text-align: left; font-size: 14px; color: #2c3e50; }
-        select, button, input, textarea { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ccd1d1; border-radius: 8px; font-size: 16px; box-sizing: border-box; }
-        select:focus { border-color: #3498db; outline: none; }
-        button { background-color: #2ecc71; color: white; border: none; font-weight: bold; cursor: pointer; margin-top: 20px; transition: 0.2s; }
+        input, button, textarea { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ccd1d1; border-radius: 8px; font-size: 16px; box-sizing: border-box; }
+        input:focus, textarea:focus { border-color: #3498db; outline: none; }
+        
+        /* Liste de suggestions de recherche */
+        .suggestions-list { position: absolute; width: 100%; background: white; border: 1px solid #ccc; border-top: none; border-radius: 0 0 8px 8px; max-height: 150px; overflow-y: auto; z-index: 10; display: none; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .suggestions-list div { padding: 10px; cursor: pointer; text-align: left; }
+        .suggestions-list div:hover { background-color: #f1f1f1; }
+
+        button { background-color: #2ecc71; color: white; border: none; font-weight: bold; cursor: pointer; margin-top: 25px; transition: 0.2s; }
         button:hover { background-color: #27ae60; }
         .resultat { margin-top: 25px; padding: 15px; background: #ebf5fb; border: 1px solid #a9dfbf; border-radius: 8px; display: none; }
         .prix { font-size: 18px; font-weight: bold; color: #2c3e50; margin: 8px 0; text-align: left; }
-        .suggestion-box { margin-top: 35px; border-top: 2px dashed #bdc3c7; padding-top: 20px; text-style: left; }
+        
+        .suggestion-box { margin-top: 35px; border-top: 2px dashed #bdc3c7; padding-top: 20px; text-align: left; }
         .suggestion-box h3 { color: #2c3e50; font-size: 18px; margin-top: 0; }
         .btn-suggestion { background-color: #34495e; }
+        .btn-suggestion:hover { background-color: #2c3e50; }
     </style>
 </head>
 <body>
@@ -27,43 +37,19 @@
     <h1>🇨🇲 TransPrix Douala</h1>
     <p class="subtitle">Trouvez le juste prix pour votre trajet</p>
     
-    <!-- SÉLECTION DU DÉPART -->
-    <label for="depart">📍 Lieu de Départ :</label>
-    <select id="depart">
-        <option value="akwa">Akwa</option>
-        <option value="bonamoussadi">Bonamoussadi</option>
-        <option value="bonanjo">Bonanjo</option>
-        <option value="bonapriso">Bonapriso</option>
-        <option value="campus_ange_raphael">Campus Ange Raphaël</option>
-        <option value="campus_ndogbong">Campus Ndogbong</option>
-        <option value="campus_pk17">Campus PK 17 (Polytechnique)</option>
-        <option value="cite_des_palmiers">Cité des Palmiers</option>
-        <option value="newbell">New Bell</option>
-        <option value="ndogbong">Ndogbong</option>
-        <option value="ndogpassi">Ndogpassi</option>
-        <option value="ndokoti">Ndokoti</option>
-        <option value="pk21">PK 21</option>
-        <option value="yassa">Yassa (Total Nkolbong)</option>
-    </select>
+    <!-- RECHERCHE DU DÉPART -->
+    <label>📍 Lieu de Départ :</label>
+    <div class="search-container">
+        <input type="text" id="searchDepart" placeholder="Tapez le quartier (ex: Ndokoti...)" oninput="filtrerQuartiers('Depart')">
+        <div id="optionsDepart" class="suggestions-list"></div>
+    </div>
 
-    <!-- SÉLECTION DE L'ARRIVÉE -->
-    <label for="arrivee">🏁 Lieu d'Arrivée :</label>
-    <select id="arrivee">
-        <option value="akwa">Akwa</option>
-        <option value="bonamoussadi">Bonamoussadi</option>
-        <option value="bonanjo">Bonanjo</option>
-        <option value="bonapriso">Bonapriso</option>
-        <option value="campus_ange_raphael">Campus Ange Raphaël</option>
-        <option value="campus_ndogbong">Campus Ndogbong</option>
-        <option value="campus_pk17">Campus PK 17 (Polytechnique)</option>
-        <option value="cite_des_palmiers">Cité des Palmiers</option>
-        <option value="newbell">New Bell</option>
-        <option value="ndogbong">Ndogbong</option>
-        <option value="ndogpassi">Ndogpassi</option>
-        <option value="ndokoti">Ndokoti</option>
-        <option value="pk21">PK 21</option>
-        <option value="yassa">Yassa (Total Nkolbong)</option>
-    </select>
+    <!-- RECHERCHE DE L'ARRIVÉE -->
+    <label>🏁 Lieu d'Arrivée :</label>
+    <div class="search-container">
+        <input type="text" id="searchArrivee" placeholder="Tapez le quartier (ex: Yassa...)" oninput="filtrerQuartiers('Arrivee')">
+        <div id="optionsArrivee" class="suggestions-list"></div>
+    </div>
 
     <button onclick="calculerPrix()">Afficher les Tarifs</button>
 
@@ -77,13 +63,12 @@
         </small>
     </div>
 
-    <!-- FORMULAIRE DE SUGGESTION POUR LES UTILISATEURS -->
+    <!-- FORMULAIRE DE SUGGESTION CONNECTÉ À FORMSPREE -->
     <div class="suggestion-box">
         <h3>📢 Une erreur ou un trajet manquant ?</h3>
         <p class="subtitle">Aidez-nous à mettre à jour les prix de Douala !</p>
         
-        <!-- Ce formulaire envoie gratuitement les données sur votre boîte mail via Formspree -->
-        <form action="https://formspree.io" method="POST">
+        <form action="https://formspree.io/f/xgawglkj" method="POST">
             <input type="text" name="trajet" placeholder="Ex: De Ndokoti vers Yassa" required>
             <input type="text" name="prix_propose" placeholder="Ex: Moto 600 F, Taxi 300 F" required>
             <textarea name="commentaire" placeholder="Remarques (Ex: Le soir ça augmente)" rows="2"></textarea>
@@ -93,32 +78,77 @@
 </div>
 
 <script>
-// BASE DE DONNÉES DES TARIFS (Modifiable facilement)
-// Syntaxe : "depart_arrivee": { moto: PRIX, taxi: PRIX }
+// LISTE DES QUARTIERS UNIQUE POUR LA RECHERCHE
+const listeQuartiers = [
+    "Akwa", "Bonamoussadi", "Bonanjo", "Bonapriso", 
+    "Campus Ange Raphaël", "Campus Ndogbong", "Campus PK 17 (Polytechnique)", 
+    "Cité des Palmiers", "New Bell", "Ndogbong", "Ndogpassi", "Ndokoti", "PK 21", "Yassa (Total Nkolbong)"
+];
+
+// BASE DE DONNÉES DES TARIFS (Identifiants en minuscules, espaces gérés automatiquement par le script)
 const tarifs = {
-    "yassa_akwa": { moto: 1000, taxi: 500 },
-    "yassa_ndokoti": { moto: 600, taxi: 300 },
-    "ndokoti_campus_ndogbong": { moto: 250, taxi: 150 },
-    "ndokoti_campus_pk17": { moto: 500, taxi: 300 },
+    "yassa (total nkolbong)_akwa": { moto: 1000, taxi: 500 },
+    "yassa (total nkolbong)_ndokoti": { moto: 600, taxi: 300 },
+    "ndokoti_campus ndogbong": { moto: 250, taxi: 150 },
+    "ndokoti_campus pk 17 (polytechnique)": { moto: 500, taxi: 300 },
     "bonamoussadi_akwa": { moto: 600, taxi: 350 },
     "bonanjo_bonapriso": { moto: 300, taxi: 250 },
-    "newbell_akwa": { moto: 400, taxi: 250 },
-    "cite_des_palmiers_ndokoti": { moto: 300, taxi: 200 },
-    "pk21_ndokoti": { moto: 600, taxi: 350 }
+    "new bell_akwa": { moto: 400, taxi: 250 },
+    "cité des palmiers_ndokoti": { moto: 300, taxi: 200 },
+    "pk 21_ndokoti": { moto: 600, taxi: 350 }
 };
 
-function calculerPrix() {
-    const depart = document.getElementById("depart").value;
-    const arrivee = document.getElementById("arrivee").value;
+// Fonction pour filtrer et afficher les suggestions au fur et à mesure de la saisie
+function filtrerQuartiers(type) {
+    const input = document.getElementById("search" + type);
+    const box = document.getElementById("options" + type);
+    const texte = input.value.toLowerCase();
     
-    if (depart === arrivee) {
+    box.innerHTML = "";
+    if (!texte) { box.style.display = "none"; return; }
+    
+    const correspondances = listeQuartiers.filter(q => q.toLowerCase().includes(texte));
+    
+    if (correspondances.length > 0) {
+        box.style.display = "block";
+        correspondances.forEach(q => {
+            const div = document.createElement("div");
+            div.innerText = q;
+            div.onclick = function() {
+                input.value = q;
+                box.style.display = "none";
+            };
+            box.appendChild(div);
+        });
+    } else {
+        box.style.display = "none";
+    }
+}
+
+// Fermer les listes de suggestions si on clique ailleurs sur l'écran
+document.addEventListener("click", function(e) {
+    if (e.target && e.target.id && !e.target.id.startsWith("search")) {
+        document.getElementById("optionsDepart").style.display = "none";
+        document.getElementById("optionsArrivee").style.display = "none";
+    }
+});
+
+function calculerPrix() {
+    const depart = document.getElementById("searchDepart").value.trim();
+    const arrivee = document.getElementById("searchArrivee").value.trim();
+    
+    if (!depart || !arrivee) {
+        alert("Veuillez sélectionner ou écrire un quartier de départ et d'arrivée.");
+        return;
+    }
+    if (depart.toLowerCase() === arrivee.toLowerCase()) {
         alert("Le départ et l'arrivée sont identiques !");
         return;
     }
     
-    // Test dans les deux sens (Aller ou Retour)
-    const clefAller = depart + "_" + arrivee;
-    const clefRetour = arrivee + "_" + depart;
+    // Nettoyage pour correspondre aux clés de la base de données
+    const clefAller = (depart + "_" + arrivee).toLowerCase();
+    const clefRetour = (arrivee + "_" + depart).toLowerCase();
     
     const trajet = tarifs[clefAller] || tarifs[clefRetour];
     
@@ -127,7 +157,7 @@ function calculerPrix() {
         document.getElementById("prixTaxi").innerText = "🚖 Taxi : " + trajet.taxi + " FCFA";
         document.getElementById("resultatBox").style.display = "block";
     } else {
-        alert("Ce trajet spécifique n'a pas encore de tarif enregistré. Utilisez le formulaire ci-dessous pour nous suggérer un prix !");
+        alert("Ce trajet spécifique n'a pas encore de tarif enregistré. Utilisez le formulaire ci-dessous pour nous suggérer le prix actuel !");
     }
 }
 </script>
