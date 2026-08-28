@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TransPrix Douala - Tarifs Moto et Taxi</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f7f9fa; margin: 0; padding: 15px; color: #333; }
+        .container { max-width: 450px; background: white; margin: 10px auto; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
+        h1 { color: #e67e22; font-size: 26px; margin-bottom: 5px; text-align: center; }
+        p.subtitle { color: #7f8c8d; font-size: 14px; margin-top: 0; margin-bottom: 20px; text-align: center; }
+        
+        .search-container { position: relative; margin-top: 5px; }
+        label { font-weight: bold; display: block; margin-top: 15px; text-align: left; font-size: 14px; color: #2c3e50; }
+        input, button, textarea { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ccd1d1; border-radius: 8px; font-size: 16px; box-sizing: border-box; }
+        input:focus, textarea:focus { border-color: #3498db; outline: none; }
+        
+        .suggestions-list { position: absolute; width: 100%; background: white; border: 1px solid #ccc; border-top: none; border-radius: 0 0 8px 8px; max-height: 150px; overflow-y: auto; z-index: 10; display: none; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .suggestions-list div { padding: 10px; cursor: pointer; text-align: left; }
+        .suggestions-list div:hover { background-color: #f1f1f1; }
+
+        button { background-color: #2ecc71; color: white; border: none; font-weight: bold; cursor: pointer; margin-top: 25px; transition: 0.2s; }
+        button:hover { background-color: #27ae60; }
+        .resultat { margin-top: 25px; padding: 15px; background: #ebf5fb; border: 1px solid #a9dfbf; border-radius: 8px; display: none; }
+        .prix { font-size: 18px; font-weight: bold; color: #2c3e50; margin: 8px 0; text-align: left; }
+        
+        .suggestion-box { margin-top: 35px; border-top: 2px dashed #bdc3c7; padding-top: 20px; text-align: left; }
+        .suggestion-box h3 { color: #2c3e50; font-size: 18px; margin-top: 0; }
+        .btn-suggestion { background-color: #34495e; }
+        .btn-suggestion:hover { background-color: #2c3e50; }
+        
+        .chargement { color: #e67e22; font-weight: bold; margin: 10px 0; display: block; text-align: center; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🇨🇲 TransPrix Douala</h1>
+    <p class="subtitle">Trouvez le juste prix pour votre trajet</p>
+    
+    <div id="statutChargement" class="chargement">🔄 Connexion en cours...</div>
+
+    <!-- RECHERCHE DU DÉPART -->
+    <label>📍 Lieu de Départ :</label>
+    <div class="search-container">
+        <input type="text" id="searchDepart" placeholder="Tapez le quartier (ex: Yassa, Akwa...)" oninput="filtrerQuartiers('Depart')">
+        <div id="optionsDepart" class="suggestions-list"></div>
+    </div>
+
+    <!-- RECHERCHE DE L'ARRIVÉE -->
+    <label>🏁 Lieu d'Arrivée :</label>
+    <div class="search-container">
+        <input type="text" id="searchArrivee" placeholder="Tapez le quartier (ex: Ndokoti...)" oninput="filtrerQuartiers('Arrivee')">
+        <div id="optionsArrivee" class="suggestions-list"></div>
+    </div>
+
+    <button id="btnCalculer" onclick="calculerPrix()">Afficher les Tarifs</button>
+
+    <!-- ZONE D'AFFICHAGE DES PRIX -->
+    <div id="resultatBox" class="resultat">
+        <h3 style="margin-top:0; color:#2980b9;">Tarifs indicatifs :</h3>
+        <p class="prix" id="prixMoto">🏍️ Moto : -- FCFA</p>
+        <p class="prix" id="prixTaxi">🚖 Taxi : -- FCFA</p>
+        <small style="color: #7f8c8d; display:block; text-align:left; margin-top:10px;">
+            * Les prix varient selon l'heure, la météo ou l'état de la route.
+        </small>
+    </div>
+
+    <!-- FORMULAIRE DE SUGGESTION -->
+    <div class="suggestion-box">
+        <h3>📢 Une erreur ou un trajet manquant ?</h3>
+        <p class="subtitle">Aidez-nous à mettre à jour les prix !</p>
+        <form action="https://formspree.io" method="POST">
+            <input type="text" name="trajet" placeholder="Ex: De Ndokoti vers Yassa" required>
+            <input type="text" name="prix_propose" placeholder="Ex: Moto 600 F, Taxi 300 F" required>
+            <textarea name="commentaire" placeholder="Remarques (Ex: Le soir ça augmente)" rows="2"></textarea>
+            <button type="submit" class="btn-suggestion">Envoyer ma suggestion</button>
+        </form>
+    </div>
+</div>
+
+<script>
+// Quartiers par défaut
+let listeQuartiers = ["Akwa", "Bonamoussadi", "Bonanjo", "Bonapriso", "Campus Ange Raphaël", "Campus Ndogbong", "Campus PK 17 (Polytechnique)", "Cité des Palmiers", "New Bell", "Ndogbong", "Ndogpassi", "Ndokoti", "PK 21", "Yassa (Total Nkolbong)"];
+let tarifs = {};
+
+// Connexion directe et rapide à votre lien Google Sheets
+const urlGoogleSheets = "https://google.com";
+
+async function chargerDonneesExcel() {
+    try {
+        const response = await fetch(urlGoogleSheets);
+        if (!response.ok) throw new Error("Erreur");
+        const data = await response.text();
+        
+        const lignes = data.split(/\r?\n/);
+        const setQuartiers = new Set();
+
+        for (let i = 1; i < lignes.length; i++) {
+            let ligne = lignes[i].trim();
+            if (!ligne) continue;
+            
+            // On gère les séparateurs habituels
+            let colonnes = ligne.includes(";") ? ligne.split(";") : ligne.split(",");
+            
+            if (colonnes.length >= 4) {
+                const dep = colonnes[0] ? colonnes[0].trim() : "";
+                const arr = colonnes[1] ? colonnes[1].trim() : "";
+                const moto = colonnes[2] ? colonnes[2].trim() : "";
+                const taxi = colonnes[3] ? colonnes[3].trim() : "";
+
+                if (dep && arr) {
+                    setQuartiers.add(dep);
+                    setQuartiers.add(arr);
+                    
+                    tarifs[dep.toLowerCase() + "_" + arr.toLowerCase()] = { moto: moto, taxi: taxi };
+                    tarifs[arr.toLowerCase() + "_" + dep.toLowerCase()] = { moto: moto, taxi: taxi };
+                }
+            }
+        }
+
+        if(setQuartiers.size > 0) {
+            listeQuartiers = Array.from(setQuartiers).sort();
+            document.getElementById("statutChargement").style.color = "#2ecc71";
+            document.getElementById("statutChargement").innerText = "✅ Base de données connectée !";
+            setTimeout(() => { document.getElementById("statutChargement").style.display = "none"; }, 2500);
+        } else {
+            throw new Error("Vide");
+        }
+        
+    } catch (error) {
+        document.getElementById("statutChargement").style.color = "#34495e";
+        document.getElementById("statutChargement").innerText = "💡 Mode local actif (Quartiers par défaut disponibles)";
+    }
+}
+
+function filtrerQuartiers(type) {
+    const input = document.getElementById("search" + type);
+    const box = document.getElementById("options" + type);
+    const texte = input.value.toLowerCase();
+    
+    box.innerHTML = "";
+    if (!texte) { box.style.display = "none"; return; }
+    
+    const correspondances = listeQuartiers.filter(q => q.toLowerCase().includes(texte));
+    
+    if (correspondances.length > 0) {
+        box.style.display = "block";
+        correspondances.forEach(q => {
+            const div = document.createElement("div");
+            div.innerText = q;
+            div.onclick = function() {
+                input.value = q;
+                box.style.display = "none";
+            };
+            box.appendChild(div);
+        });
+    } else {
+        box.style.display = "none";
+    }
+}
+
+document.addEventListener("click", function(e) {
+    if (e.target && e.target.id && !e.target.id.startsWith("search")) {
+        document.getElementById("optionsDepart").style.display = "none";
+        document.getElementById("optionsArrivee").style.display = "none";
+    }
+});
+
+function calculerPrix() {
+    const depart = document.getElementById("searchDepart").value.trim();
+    const arrivee = document.getElementById("searchArrivee").value.trim();
+    
+    if (!depart || !arrivee) {
+        alert("Veuillez sélectionner ou écrire un quartier.");
+        return;
+    }
+    if (depart.toLowerCase() === arrivee.toLowerCase()) {
+        alert("Le départ et l'arrivée sont identiques !");
+        return;
+    }
+    
+    const clef = (depart + "_" + arrivee).toLowerCase();
+    const trajet = tarifs[clef];
+    
+    if (trajet) {
+        document.getElementById("prixMoto").innerText = "🏍️ Moto : " + trajet.moto + " FCFA";
+        document.getElementById("prixTaxi").innerText = "🚖 Taxi : " + trajet.taxi + " FCFA";
+        document.getElementById("resultatBox").style.display = "block";
+    } else {
+        alert("Ce trajet n'est pas encore documenté dans votre tableau Excel.");
+    }
+}
+
+chargerDonneesExcel();
+</script>
+
+</body>
+</html>
