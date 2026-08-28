@@ -36,9 +36,9 @@
 
 <div class="container">
     <h1>🇨🇲 TransPrix Douala</h1>
-    <p class="subtitle">Trouvez le juste price pour votre trajet</p>
+    <p class="subtitle">Trouvez le juste prix pour votre trajet</p>
     
-    <div id="statutChargement" class="chargement">🔄 Synchronisation avec Excel...</div>
+    <div id="statutChargement" class="chargement">🔄 Connexion en cours...</div>
 
     <!-- RECHERCHE DU DÉPART -->
     <label>📍 Lieu de Départ :</label>
@@ -80,52 +80,29 @@
 </div>
 
 <script>
-// Quartiers de secours
+// Quartiers par défaut
 let listeQuartiers = ["Akwa", "Bonamoussadi", "Bonanjo", "Bonapriso", "Campus Ange Raphaël", "Campus Ndogbong", "Campus PK 17 (Polytechnique)", "Cité des Palmiers", "New Bell", "Ndogbong", "Ndogpassi", "Ndokoti", "PK 21", "Yassa (Total Nkolbong)"];
 let tarifs = {};
 
-const urlGoogleSheets = "https://allorigins.win" + encodeURIComponent("https://google.com");
-
-// Analyseur robuste de fichiers CSV (gère les guillemets, virgules et points-virgules proprement)
-function parseCSV(text) {
-    let p = '', c = '', r = [];
-    let q = false;
-    let row = [''];
-    let separator = text.includes(';') ? ';' : ',';
-
-    for (let i=0; i<text.length; i++) {
-        c = text[i];
-        let next = text[i+1];
-        if (c === '"') {
-            if (q && next === '"') { row[row.length-1] += '"'; i++; }
-            else { q = !q; }
-        } else if (c === separator && !q) {
-            row.push('');
-        } else if ((c === '\r' || c === '\n') && !q) {
-            if (c === '\r' && next === '\n') { i++; }
-            r.push(row);
-            row = [''];
-        } else {
-            row[row.length-1] += c;
-        }
-    }
-    if (row.length > 1 || row[0] !== '') { r.push(row); }
-    return r;
-}
+// Connexion directe et rapide à votre lien Google Sheets
+const urlGoogleSheets = "https://google.com";
 
 async function chargerDonneesExcel() {
     try {
         const response = await fetch(urlGoogleSheets);
-        if (!response.ok) throw new Error("Erreur réseau proxy");
-        const rawText = await response.text();
+        if (!response.ok) throw new Error("Erreur");
+        const data = await response.text();
         
-        // Découpage intelligent de la feuille Excel
-        const lignes = parseCSV(rawText);
+        const lignes = data.split(/\r?\n/);
         const setQuartiers = new Set();
 
-        // On saute la première ligne des titres (i = 1)
         for (let i = 1; i < lignes.length; i++) {
-            let colonnes = lignes[i];
+            let ligne = lignes[i].trim();
+            if (!ligne) continue;
+            
+            // On gère les séparateurs habituels
+            let colonnes = ligne.includes(";") ? ligne.split(";") : ligne.split(",");
+            
             if (colonnes.length >= 4) {
                 const dep = colonnes[0] ? colonnes[0].trim() : "";
                 const arr = colonnes[1] ? colonnes[1].trim() : "";
@@ -136,7 +113,6 @@ async function chargerDonneesExcel() {
                     setQuartiers.add(dep);
                     setQuartiers.add(arr);
                     
-                    // Enregistrement bidirectionnel (Aller et Retour)
                     tarifs[dep.toLowerCase() + "_" + arr.toLowerCase()] = { moto: moto, taxi: taxi };
                     tarifs[arr.toLowerCase() + "_" + dep.toLowerCase()] = { moto: moto, taxi: taxi };
                 }
@@ -147,15 +123,14 @@ async function chargerDonneesExcel() {
             listeQuartiers = Array.from(setQuartiers).sort();
             document.getElementById("statutChargement").style.color = "#2ecc71";
             document.getElementById("statutChargement").innerText = "✅ Base de données connectée !";
-            setTimeout(() => { document.getElementById("statutChargement").style.display = "none"; }, 3000);
+            setTimeout(() => { document.getElementById("statutChargement").style.display = "none"; }, 2500);
         } else {
-            throw new Error("Aucune ligne valide trouvée.");
+            throw new Error("Vide");
         }
         
     } catch (error) {
         document.getElementById("statutChargement").style.color = "#34495e";
         document.getElementById("statutChargement").innerText = "💡 Mode local actif (Quartiers par défaut disponibles)";
-        console.error("Échec du chargement dynamique.", error);
     }
 }
 
@@ -213,3 +188,12 @@ function calculerPrix() {
         document.getElementById("prixTaxi").innerText = "🚖 Taxi : " + trajet.taxi + " FCFA";
         document.getElementById("resultatBox").style.display = "block";
     } else {
+        alert("Ce trajet n'est pas encore documenté dans votre tableau Excel.");
+    }
+}
+
+chargerDonneesExcel();
+</script>
+
+</body>
+</html>
