@@ -15,7 +15,6 @@
         input, button, textarea { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ccd1d1; border-radius: 8px; font-size: 16px; box-sizing: border-box; }
         input:focus, textarea:focus { border-color: #3498db; outline: none; }
         
-        /* Liste de suggestions de recherche */
         .suggestions-list { position: absolute; width: 100%; background: white; border: 1px solid #ccc; border-top: none; border-radius: 0 0 8px 8px; max-height: 150px; overflow-y: auto; z-index: 10; display: none; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         .suggestions-list div { padding: 10px; cursor: pointer; text-align: left; }
         .suggestions-list div:hover { background-color: #f1f1f1; }
@@ -29,6 +28,8 @@
         .suggestion-box h3 { color: #2c3e50; font-size: 18px; margin-top: 0; }
         .btn-suggestion { background-color: #34495e; }
         .btn-suggestion:hover { background-color: #2c3e50; }
+        
+        .chargement { color: #e67e22; font-weight: bold; margin: 10px 0; display: block; text-align: center; }
     </style>
 </head>
 <body>
@@ -37,38 +38,39 @@
     <h1>🇨🇲 TransPrix Douala</h1>
     <p class="subtitle">Trouvez le juste prix pour votre trajet</p>
     
+    <div id="statutChargement" class="chargement">🔄 Connexion à la base de données de Douala...</div>
+
     <!-- RECHERCHE DU DÉPART -->
     <label>📍 Lieu de Départ :</label>
     <div class="search-container">
-        <input type="text" id="searchDepart" placeholder="Tapez le quartier (ex: Ndokoti...)" oninput="filtrerQuartiers('Depart')">
+        <input type="text" id="searchDepart" placeholder="Tapez le quartier..." oninput="filtrerQuartiers('Depart')" disabled>
         <div id="optionsDepart" class="suggestions-list"></div>
     </div>
 
     <!-- RECHERCHE DE L'ARRIVÉE -->
     <label>🏁 Lieu d'Arrivée :</label>
     <div class="search-container">
-        <input type="text" id="searchArrivee" placeholder="Tapez le quartier (ex: Yassa...)" oninput="filtrerQuartiers('Arrivee')">
+        <input type="text" id="searchArrivee" placeholder="Tapez le quartier..." oninput="filtrerQuartiers('Arrivee')" disabled>
         <div id="optionsArrivee" class="suggestions-list"></div>
     </div>
 
-    <button onclick="calculerPrix()">Afficher les Tarifs</button>
+    <button id="btnCalculer" onclick="calculerPrix()" disabled>Afficher les Tarifs</button>
 
     <!-- ZONE D'AFFICHAGE DES PRIX -->
     <div id="resultatBox" class="resultat">
         <h3 style="margin-top:0; color:#2980b9;">Tarifs indicatifs :</h3>
         <p class="prix" id="prixMoto">🏍️ Moto : -- FCFA</p>
-        <p class="prix" id="prixTaxi">🚖 Taxi de course : -- FCFA</p>
+        <p class="prix" id="prixTaxi">🚖 Taxi : -- FCFA</p>
         <small style="color: #7f8c8d; display:block; text-align:left; margin-top:10px;">
             * Les prix varient selon l'heure, la météo ou l'état de la route.
         </small>
     </div>
 
-    <!-- FORMULAIRE DE SUGGESTION CONNECTÉ À FORMSPREE -->
+    <!-- FORMULAIRE DE SUGGESTION -->
     <div class="suggestion-box">
         <h3>📢 Une erreur ou un trajet manquant ?</h3>
-        <p class="subtitle">Aidez-nous à mettre à jour les prix de Douala !</p>
-        
-        <form action="https://formspree.io/f/xgawglkj" method="POST">
+        <p class="subtitle">Aidez-nous à mettre à jour les prix !</p>
+        <form action="https://formspree.io" method="POST">
             <input type="text" name="trajet" placeholder="Ex: De Ndokoti vers Yassa" required>
             <input type="text" name="prix_propose" placeholder="Ex: Moto 600 F, Taxi 300 F" required>
             <textarea name="commentaire" placeholder="Remarques (Ex: Le soir ça augmente)" rows="2"></textarea>
@@ -78,27 +80,54 @@
 </div>
 
 <script>
-// LISTE DES QUARTIERS UNIQUE POUR LA RECHERCHE
-const listeQuartiers = [
-    "Akwa", "Bonamoussadi", "Bonanjo", "Bonapriso", 
-    "Campus Ange Raphaël", "Campus Ndogbong", "Campus PK 17 (Polytechnique)", 
-    "Cité des Palmiers", "New Bell", "Ndogbong", "Ndogpassi", "Ndokoti", "PK 21", "Yassa (Total Nkolbong)"
-];
+let listeQuartiers = [];
+let tarifs = {};
 
-// BASE DE DONNÉES DES TARIFS (Identifiants en minuscules, espaces gérés automatiquement par le script)
-const tarifs = {
-    "yassa (total nkolbong)_akwa": { moto: 1000, taxi: 500 },
-    "yassa (total nkolbong)_ndokoti": { moto: 600, taxi: 300 },
-    "ndokoti_campus ndogbong": { moto: 250, taxi: 150 },
-    "ndokoti_campus pk 17 (polytechnique)": { moto: 500, taxi: 300 },
-    "bonamoussadi_akwa": { moto: 600, taxi: 350 },
-    "bonanjo_bonapriso": { moto: 300, taxi: 250 },
-    "new bell_akwa": { moto: 400, taxi: 250 },
-    "cité des palmiers_ndokoti": { moto: 300, taxi: 200 },
-    "pk 21_ndokoti": { moto: 600, taxi: 350 }
-};
+// Votre lien Excel Google Sheets en version CSV connecté en direct
+const urlGoogleSheets = "https://google.com";
 
-// Fonction pour filtrer et afficher les suggestions au fur et à mesure de la saisie
+async function chargerDonneesExcel() {
+    try {
+        const response = await fetch(urlGoogleSheets);
+        const data = await response.text();
+        
+        const lignes = data.split("\n");
+        const setQuartiers = new Set();
+
+        for (let i = 1; i < lignes.length; i++) {
+            if (!lignes[i].trim()) continue;
+            
+            // Gestion simple du découpage des lignes CSV
+            const colonnes = lignes[i].split(",");
+            if (colonnes.length >= 4) {
+                const dep = colonnes[0].trim();
+                const arr = colonnes[1].trim();
+                const moto = colonnes[2].trim();
+                const taxi = colonnes[3].trim();
+
+                if (dep && arr) {
+                    setQuartiers.add(dep);
+                    setQuartiers.add(arr);
+                    
+                    const clef = (dep + "_" + arr).toLowerCase();
+                    tarifs[clef] = { moto: moto, taxi: taxi };
+                }
+            }
+        }
+
+        listeQuartiers = Array.from(setQuartiers).sort();
+        
+        document.getElementById("statutChargement").style.display = "none";
+        document.getElementById("searchDepart").disabled = false;
+        document.getElementById("searchArrivee").disabled = false;
+        document.getElementById("btnCalculer").disabled = false;
+        
+    } catch (error) {
+        document.getElementById("statutChargement").innerText = "⚠️ Erreur de connexion avec la base de données Excel.";
+        console.error(error);
+    }
+}
+
 function filtrerQuartiers(type) {
     const input = document.getElementById("search" + type);
     const box = document.getElementById("options" + type);
@@ -125,7 +154,6 @@ function filtrerQuartiers(type) {
     }
 }
 
-// Fermer les listes de suggestions si on clique ailleurs sur l'écran
 document.addEventListener("click", function(e) {
     if (e.target && e.target.id && !e.target.id.startsWith("search")) {
         document.getElementById("optionsDepart").style.display = "none";
@@ -138,7 +166,7 @@ function calculerPrix() {
     const arrivee = document.getElementById("searchArrivee").value.trim();
     
     if (!depart || !arrivee) {
-        alert("Veuillez sélectionner ou écrire un quartier de départ et d'arrivée.");
+        alert("Veuillez sélectionner ou écrire un quartier.");
         return;
     }
     if (depart.toLowerCase() === arrivee.toLowerCase()) {
@@ -146,7 +174,6 @@ function calculerPrix() {
         return;
     }
     
-    // Nettoyage pour correspondre aux clés de la base de données
     const clefAller = (depart + "_" + arrivee).toLowerCase();
     const clefRetour = (arrivee + "_" + depart).toLowerCase();
     
@@ -157,9 +184,11 @@ function calculerPrix() {
         document.getElementById("prixTaxi").innerText = "🚖 Taxi : " + trajet.taxi + " FCFA";
         document.getElementById("resultatBox").style.display = "block";
     } else {
-        alert("Ce trajet spécifique n'a pas encore de tarif enregistré. Utilisez le formulaire ci-dessous pour nous suggérer le prix actuel !");
+        alert("Trajet non disponible. Suggérez-le ci-dessous !");
     }
 }
+
+chargerDonneesExcel();
 </script>
 
 </body>
