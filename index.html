@@ -38,12 +38,11 @@
     <h1>🇨🇲 TransPrix Douala</h1>
     <p class="subtitle">Trouvez le juste prix pour votre trajet</p>
     
-    <div id="statutChargement" class="chargement">🔄 Synchronisation avec Excel en cours...</div>
+    <div id="statutChargement" class="chargement">🔄 Synchronisation avec Excel...</div>
 
     <!-- RECHERCHE DU DÉPART -->
     <label>📍 Lieu de Départ :</label>
     <div class="search-container">
-        <!-- Rendu toujours actif pour éviter les blocages -->
         <input type="text" id="searchDepart" placeholder="Tapez le quartier (ex: Yassa, Akwa...)" oninput="filtrerQuartiers('Depart')">
         <div id="optionsDepart" class="suggestions-list"></div>
     </div>
@@ -81,19 +80,19 @@
 </div>
 
 <script>
-let listeQuartiers = [];
+// Vos quartiers de secours (Toujours disponibles même si Excel bloque temporairement)
+let listeQuartiers = ["Akwa", "Bonamoussadi", "Bonanjo", "Bonapriso", "Campus Ange Raphaël", "Campus Ndogbong", "Campus PK 17 (Polytechnique)", "Cité des Palmiers", "New Bell", "Ndogbong", "Ndogpassi", "Ndokoti", "PK 21", "Yassa (Total Nkolbong)"];
 let tarifs = {};
 
-// Votre lien direct sécurisé
-const urlGoogleSheets = "https://google.com";
+// Utilisation d'un proxy public stable pour contourner la sécurité Google CORS
+const urlGoogleSheets = "https://allorigins.win" + encodeURIComponent("https://google.com");
 
 async function chargerDonneesExcel() {
     try {
         const response = await fetch(urlGoogleSheets);
-        if (!response.ok) throw new Error("Erreur réseau");
+        if (!response.ok) throw new Error("Erreur serveur proxy");
         const data = await response.text();
         
-        // Nettoyage des retours à la ligne Windows/Mac/Linux
         const lignes = data.split(/\r?\n/);
         const setQuartiers = new Set();
 
@@ -101,7 +100,6 @@ async function chargerDonneesExcel() {
             let ligne = lignes[i].trim();
             if (!ligne) continue;
             
-            // Découpage intelligent par virgule
             const colonnes = ligne.split(",");
             if (colonnes.length >= 4) {
                 const dep = colonnes[0].trim();
@@ -113,29 +111,26 @@ async function chargerDonneesExcel() {
                     setQuartiers.add(dep);
                     setQuartiers.add(arr);
                     
-                    // Enregistrement des deux sens (Aller et Retour) pour éviter les bugs
                     tarifs[dep.toLowerCase() + "_" + arr.toLowerCase()] = { moto: moto, taxi: taxi };
                     tarifs[arr.toLowerCase() + "_" + dep.toLowerCase()] = { moto: moto, taxi: taxi };
                 }
             }
         }
 
-        listeQuartiers = Array.from(setQuartiers).sort();
-        document.getElementById("statutChargement").style.color = "#2ecc71";
-        document.getElementById("statutChargement").innerText = "✅ Base de données à jour !";
+        // Si Excel a des données, on remplace la liste par celle d'Excel
+        if(setQuartiers.size > 0) {
+            listeQuartiers = Array.from(setQuartiers).sort();
+        }
         
-        // Cache le message après 3 secondes
-        setTimeout(() => {
-            document.getElementById("statutChargement").style.display = "none";
-        }, 3000);
+        document.getElementById("statutChargement").style.color = "#2ecc71";
+        document.getElementById("statutChargement").innerText = "✅ Base de données connectée !";
+        setTimeout(() => { document.getElementById("statutChargement").style.display = "none"; }, 3000);
         
     } catch (error) {
-        document.getElementById("statutChargement").style.color = "#e74c3c";
-        document.getElementById("statutChargement").innerText = "⚠️ Lecture locale active (Vérifiez le partage Excel).";
-        console.error(error);
-        
-        // Liste de secours au cas où internet coupe ou le lien Sheets a un problème
-        listeQuartiers = ["Akwa", "Bonamoussadi", "Bonanjo", "Bonapriso", "Campus Ange Raphaël", "Campus Ndogbong", "Cité des Palmiers", "Ndogbong", "Ndokoti", "Yassa"];
+        // En cas d'erreur, le site passe en mode local (vos quartiers de secours fonctionnent quand même !)
+        document.getElementById("statutChargement").style.color = "#34495e";
+        document.getElementById("statutChargement").innerText = "💡 Mode local actif (Quartiers par défaut disponibles)";
+        console.error("Erreur CORS ou réseau, chargement du mode local.", error);
     }
 }
 
@@ -193,7 +188,7 @@ function calculerPrix() {
         document.getElementById("prixTaxi").innerText = "🚖 Taxi : " + trajet.taxi + " FCFA";
         document.getElementById("resultatBox").style.display = "block";
     } else {
-        alert("Ce trajet n'est pas encore documenté ou l'écriture ne correspond pas exactement au tableau Excel.");
+        alert("Tarif non répertorié. Suggérez ce prix via le formulaire ci-dessous !");
     }
 }
 
