@@ -24,14 +24,14 @@
         .btn-partager { background: #0076ff; color: white; margin-top: 15px; font-size: 15px; display: flex; align-items: center; justify-content: center; gap: 8px; border: none; }
         .btn-installer { background: #e67e22; color: white; margin-top: 10px; display: none; font-weight: bold; }
         .suggestion-box { margin-top: 35px; border-top: 2px dashed #bdc3c7; padding-top: 20px; }
-        .statut-badge { color: #e67e22; font-weight: bold; margin: 10px 0; display: block; text-align: center; font-size: 14px; }
+        .statut-badge { font-weight: bold; margin: 10px 0; display: block; text-align: center; font-size: 14px; }
     </style>
 </head>
 <body>
 <div class="container">
     <h1>🇨🇲 TransPrix Douala</h1>
     <p class="subtitle">Trouvez le juste prix pour votre trajet</p>
-    <div id="statutChargement" class="statut-badge">🔄 Synchronisation avec Google Sheets...</div>
+    <div id="statutChargement" class="statut-badge" style="color: #e67e22;">🔄 Connexion aux serveurs Google...</div>
     <button id="btnPWAInstall" class="btn-installer">📲 Installer l'application sur mon écran</button>
     <label>📍 Lieu de Départ :</label>
     <div class="search-container"><input type="text" id="searchDepart" placeholder="Tapez le quartier..." oninput="filtrerQuartiers('Depart')"><div id="optionsDepart" class="suggestions-list"></div></div>
@@ -76,12 +76,16 @@ async function chargerDonneesSheets() {
         Papa.parse(csvText, {
             header: false, skipEmptyLines: true,
             complete: function(results) {
-                let setQ = new Set(listeQuartiers); let donnees = results.data;
+                let setQ = new Set(listeQuartiers);
+                let donnees = results.data;
+                // Analyse ultra-robuste ligne par ligne
                 for(let i = 1; i < donnees.length; i++) {
                     let r = donnees[i];
                     if (r && r.length >= 4) {
-                        let d = r[0].toString().replace(/"/g, "").trim(); let a = r[1].toString().replace(/"/g, "").trim();
-                        let m = r[2].toString().replace(/"/g, "").trim(); let t = r[3].toString().replace(/"/g, "").trim();
+                        let d = r[0] ? r[0].toString().replace(/"/g, "").trim() : "";
+                        let a = r[1] ? r[1].toString().replace(/"/g, "").trim() : "";
+                        let m = r[2] ? r[2].toString().replace(/"/g, "").trim() : "";
+                        let t = r[3] ? r[3].toString().replace(/"/g, "").trim() : "";
                         if (d && a) {
                             setQ.add(d); setQ.add(a);
                             tarifs[d.toLowerCase() + "_" + a.toLowerCase()] = { moto: m, taxi: t };
@@ -90,13 +94,12 @@ async function chargerDonneesSheets() {
                     }
                 }
                 listeQuartiers = Array.from(setQ).sort();
-                document.getElementById("statutChargement").innerText = "🟢 Base hybride synchronisée en direct";
+                document.getElementById("statutChargement").innerText = "🟢 Données synchronisées avec Google Sheets";
                 document.getElementById("statutChargement").style.color = "#2ecc71";
-                setTimeout(() => { document.getElementById("statutChargement").style.display = "none"; }, 2500);
             }
         });
     } catch (e) {
-        document.getElementById("statutChargement").innerText = "🟢 Mode local actif (30 trajets fonctionnels)";
+        document.getElementById("statutChargement").innerText = "🟢 Base locale active (30 trajets fonctionnels)";
         document.getElementById("statutChargement").style.color = "#2ecc71";
     }
 }
@@ -119,8 +122,8 @@ function calculerPrix() {
     const trajet = tarifs[(d + "_" + a).toLowerCase()] || tarifs[(a + "_" + d).toLowerCase()];
     if (trajet) {
         document.getElementById("prixMoto").innerText = "🏍️ Moto : " + trajet.moto + " FCFA"; document.getElementById("prixTaxi").innerText = "🚖 Taxi : " + trajet.taxi + " FCFA"; document.getElementById("resultatBox").style.display = "block";
-        textePartageGlobal = "Tarif TransPrix Douala (" + d + " ➡️ " + a + ") :\n🏍️ Moto : " + trajet.moto + " F\n🚖 Taxi : " + trajet.taxi + " F.\n\nSimule ici : https://github.io";
-    } else { alert("Ce trajet n'est pas encore enregistré."); }
+        textePartageGlobal = "Tarif TransPrix Douala (" + d + " ➡️ " + a + ") :\n🏍️ Moto : " + trajet.moto + " F\n   Taxi : " + trajet.taxi + " F.\n\nSimule ici : https://github.io";
+    } else { alert("Ce trajet n'est pas encore répertorié."); }
 }
 function partagerTarif() { if (navigator.share) { navigator.share({ title: 'TransPrix', text: textePartageGlobal }); } else { alert("Partage non supporté."); } }
 let deferredPrompt;
