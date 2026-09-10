@@ -1,0 +1,21 @@
+{
+  "short_name": "TransPrix",
+  "name": "TransPrix Douala - Tarifs",
+  "icons": [
+    {
+      "src": "https://icons8.com",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "https://icons8.com",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "/transprix-douala/index.html",
+  "background_color": "#f7f9fa",
+  "theme_color": "#e67e22",
+  "display": "standalone",
+  "orientation": "portrait"
+}
