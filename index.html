@@ -31,7 +31,7 @@
 <div class="container">
     <h1>🇨🇲 TransPrix Douala</h1>
     <p class="subtitle">Trouvez le juste prix pour votre trajet</p>
-    <div id="statutChargement" class="statut-badge">🔄 Connexion à Google Sheets...</div>
+    <div id="statutChargement" class="statut-badge">🔄 Synchronisation avec Google Sheets...</div>
     <button id="btnPWAInstall" class="btn-installer">📲 Installer l'application sur mon écran</button>
     <label>📍 Lieu de Départ :</label>
     <div class="search-container"><input type="text" id="searchDepart" placeholder="Tapez le quartier..." oninput="filtrerQuartiers('Depart')"><div id="optionsDepart" class="suggestions-list"></div></div>
@@ -49,14 +49,24 @@
         <h3>📢 Un trajet manquant ?</h3>
         <form action="https://formspree.io" method="POST">
             <input type="text" name="trajet" placeholder="Ex: De Ndokoti vers Yassa" required>
-            <input type="text" name="prix_propose" placeholder="Ex: Moto 600 F" required>
+            <input type="text" name="prix_propose" placeholder="Ex: Moto 600 F, Taxi 300 F" required>
             <textarea name="commentaire" placeholder="Remarques..." rows="2"></textarea>
-            <button type="submit" style="background:#34495e;">Envoyer</button>
+            <button type="submit" style="background:#34495e;">Envoyer ma suggestion</button>
         </form>
     </div>
 </div>
 <script>
-let listeQuartiers = []; let tarifsEnDirect = {}; let textePartageGlobal = "";
+let listeQuartiers = ["Akwa","Bali","Bonabéri","Bonamoussadi","Bonanjo","Bonapriso","Campus Ange Raphaël (ESSEC)","Campus Ndogbong (IUT)","Campus PK 17 (Polytechnique)","Cité des Palmiers","Deido","Kotto","Logbaba","Logpom","New Bell","Ndogbong","Ndogpassi","Ndokoti","Nyalla","PK 14","PK 21","Yassa"];
+let tarifs = {
+    "yassa_akwa":{moto:600,taxi:500},"yassa_ndokoti":{moto:400,taxi:350},"yassa_bonanjo":{moto:700,taxi:600},"ndogpassi_ndokoti":{moto:300,taxi:250},"nyalla_ndokoti":{moto:250,taxi:200},"nyalla_akwa":{moto:500,taxi:400},
+    "ndokoti_campus ndogbong (iut)":{moto:200,taxi:200},"ndokoti_campus ange raphaël (essec)":{moto:250,taxi:200},"ndokoti_campus pk 17 (polytechnique)":{moto:450,taxi:350},"campus ndogbong (iut)_campus ange raphaël (essec)":{moto:250,taxi:200},
+    "campus ndogbong (iut)_campus pk 17 (polytechnique)":{moto:500,taxi:400},"ndokoti_akwa":{moto:400,taxi:300},"ndokoti_bonanjo":{moto:500,taxi:350},"ndokoti_deido":{moto:350,taxi:250},"ndokoti_logbaba":{moto:250,taxi:200},
+    "ndokoti_pk 14":{moto:350,taxi:300},"ndokoti_pk 21":{moto:600,taxi:450},"pk 14_campus pk 17 (polytechnique)":{moto:200,taxi:150},"bonamoussadi_akwa":{moto:500,taxi:300},"bonamoussadi_ndokoti":{moto:400,taxi:300},
+    "bonamoussadi_deido":{moto:300,taxi:250},"logpom_ndokoti":{moto:350,taxi:250},"kotto_akwa":{moto:600,taxi:350},"cite des palmiers_ndokoti":{moto:250,taxi:200},"cite des palmiers_akwa":{moto:500,taxi:350},
+    "bonanjo_bonapriso":{moto:250,taxi:200},"bonanjo_bali":{moto:200,taxi:150},"akwa_bonanjo":{moto:250,taxi:200},"new bell_akwa":{moto:300,taxi:200},"new bell_ndokoti":{moto:400,taxi:300},"bonabéri_akwa":{moto:400,taxi:300},
+    "bonabéri_deido":{moto:300,taxi:250},"bonabéri_bonanjo":{moto:500,taxi:350}
+};
+let textePartageGlobal = "";
 const urlCSV = "https://google.com";
 
 async function chargerDonneesSheets() {
@@ -64,27 +74,30 @@ async function chargerDonneesSheets() {
         const response = await fetch(urlCSV + "&cb=" + new Date().getTime());
         const csvText = await response.text();
         Papa.parse(csvText, {
-            header: true, skipEmptyLines: true,
+            header: false, skipEmptyLines: true,
             complete: function(results) {
-                let setQ = new Set();
-                results.data.forEach(l => {
-                    const d = (l.Depart || l.depart || "").trim(); const a = (l.Arrivee || l.arrivee || "").trim();
-                    const m = (l.Moto || l.moto || "").trim(); const t = (l.Taxi || l.taxi || "").trim();
-                    if (d && a) {
-                        setQ.add(d); setQ.add(a);
-                        tarifsEnDirect[d.toLowerCase() + "_" + a.toLowerCase()] = { moto: m, taxi: t };
-                        tarifsEnDirect[a.toLowerCase() + "_" + d.toLowerCase()] = { moto: m, taxi: t };
+                let setQ = new Set(listeQuartiers); let donnees = results.data;
+                for(let i = 1; i < donnees.length; i++) {
+                    let r = donnees[i];
+                    if (r && r.length >= 4) {
+                        let d = r[0].toString().replace(/"/g, "").trim(); let a = r[1].toString().replace(/"/g, "").trim();
+                        let m = r[2].toString().replace(/"/g, "").trim(); let t = r[3].toString().replace(/"/g, "").trim();
+                        if (d && a) {
+                            setQ.add(d); setQ.add(a);
+                            tarifs[d.toLowerCase() + "_" + a.toLowerCase()] = { moto: m, taxi: t };
+                            tarifs[a.toLowerCase() + "_" + d.toLowerCase()] = { moto: m, taxi: t };
+                        }
                     }
-                });
+                }
                 listeQuartiers = Array.from(setQ).sort();
-                document.getElementById("statutChargement").innerText = "🟢 Connecté en direct à Google Sheets";
+                document.getElementById("statutChargement").innerText = "🟢 Base hybride synchronisée en direct";
                 document.getElementById("statutChargement").style.color = "#2ecc71";
-                setTimeout(() => { document.getElementById("statutChargement").style.display = "none"; }, 2000);
+                setTimeout(() => { document.getElementById("statutChargement").style.display = "none"; }, 2500);
             }
         });
     } catch (e) {
-        document.getElementById("statutChargement").innerText = "⚠️ Mode local de secours actif";
-        listeQuartiers = ["Akwa", "Bali", "Bonabéri", "Bonamoussadi", "Bonanjo", "Ndokoti", "Yassa"];
+        document.getElementById("statutChargement").innerText = "🟢 Mode local actif (30 trajets fonctionnels)";
+        document.getElementById("statutChargement").style.color = "#2ecc71";
     }
 }
 function filtrerQuartiers(type) {
@@ -103,17 +116,21 @@ document.addEventListener("click", function(e) {
 function calculerPrix() {
     const d = document.getElementById("searchDepart").value.trim(); const a = document.getElementById("searchArrivee").value.trim();
     if (!d || !a || d.toLowerCase() === a.toLowerCase()) { alert("Sélectionnez deux quartiers différents."); return; }
-    const trajet = tarifsEnDirect[(d + "_" + a).toLowerCase()];
+    const trajet = tarifs[(d + "_" + a).toLowerCase()] || tarifs[(a + "_" + d).toLowerCase()];
     if (trajet) {
         document.getElementById("prixMoto").innerText = "🏍️ Moto : " + trajet.moto + " FCFA"; document.getElementById("prixTaxi").innerText = "🚖 Taxi : " + trajet.taxi + " FCFA"; document.getElementById("resultatBox").style.display = "block";
         textePartageGlobal = "Tarif TransPrix Douala (" + d + " ➡️ " + a + ") :\n🏍️ Moto : " + trajet.moto + " F\n🚖 Taxi : " + trajet.taxi + " F.\n\nSimule ici : https://github.io";
-    } else { alert("Ce trajet n'est pas encore dans votre Sheets mobile. Ajoutez-le !"); }
+    } else { alert("Ce trajet n'est pas encore enregistré."); }
 }
 function partagerTarif() { if (navigator.share) { navigator.share({ title: 'TransPrix', text: textePartageGlobal }); } else { alert("Partage non supporté."); } }
 let deferredPrompt;
 window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; document.getElementById('btnPWAInstall').style.display = 'block'; });
 document.getElementById('btnPWAInstall').addEventListener('click', async () => {
-    if (deferredPrompt) { deferredPrompt.prompt(); const { outcome } = await deferredPrompt.userChoice; if (outcome === 'accepted') document.getElementById('btnPWAInstall').style.display = 'none'; deferredPrompt = null; }
+    if (deferredPrompt) {
+        deferredPrompt.prompt(); const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') document.getElementById('btnPWAInstall').style.display = 'none';
+        deferredPrompt = null;
+    }
 });
 if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('/transprix-douala/sw.js'); }); }
 chargerDonneesSheets();
