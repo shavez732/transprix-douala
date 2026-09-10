@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TransPrix Douala - Tarifs Moto et Taxi</title>
+    <!-- Liaison avec le fichier Manifest pour l'installation sur l'écran d'accueil -->
+    <link rel="manifest" href="manifest.json">
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f7f9fa; margin: 0; padding: 15px; color: #333; }
         .container { max-width: 450px; background: white; margin: 10px auto; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
@@ -24,7 +26,6 @@
         .resultat { margin-top: 25px; padding: 15px; background: #ebf5fb; border: 1px solid #a9dfbf; border-radius: 8px; display: none; }
         .prix { font-size: 18px; font-weight: bold; color: #2c3e50; margin: 8px 0; text-align: left; }
         
-        /* Style moderne du bouton Partager */
         .btn-partager { background-color: #0076ff; color: white; margin-top: 15px; font-size: 15px; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: bold; transition: 0.2s; border: none; }
         .btn-partager:hover { background-color: #0056b3; }
 
@@ -69,7 +70,7 @@
             * Les prix varient selon l'heure, la météo ou l'état de la route.
         </small>
         
-        <!-- BOUTON DE PARTAGE NATIF DU TÉLÉPHONE -->
+        <!-- BOUTON DE PARTAGE NATIF -->
         <button id="btnPartager" class="btn-partager" onclick="partagerTarif()">
             🔗 Partager ce tarif (WhatsApp, etc.)
         </button>
@@ -89,7 +90,7 @@
 </div>
 
 <script>
-// 1. LISTE DES QUARTIERS
+// 1. LISTE DE TOUS LES QUARTIERS DE LA BARRE DE RECHERCHE
 const listeQuartiers = [
     "Akwa", "Bali", "Bonabéri", "Bonamoussadi", "Bonanjo", "Bonapriso", 
     "Campus Ange Raphaël", "Campus Ndogbong", "Campus PK 17 (Polytechnique)", 
@@ -104,7 +105,6 @@ const tarifs = {
     "yassa_ndokoti": { moto: 400, taxi: 350 }
 };
 
-// Variable globale pour stocker le texte à partager
 let textePartageGlobal = "";
 
 function filtrerQuartiers(type) {
@@ -163,7 +163,6 @@ function calculerPrix() {
         document.getElementById("prixTaxi").innerText = "🚖 Taxi : " + trajet.taxi + " FCFA";
         document.getElementById("resultatBox").style.display = "block";
         
-        // Préparation dynamique du message texte
         textePartageGlobal = "D'après TransPrix Douala, le tarif estimé de " + depart + " vers " + arrivee + " est de : \n🏍️ Moto : " + trajet.moto + " F\n🚖 Taxi : " + trajet.taxi + " F.\n\nSimule tes trajets ici : https://github.io";
         
     } else {
@@ -171,7 +170,6 @@ function calculerPrix() {
     }
 }
 
-// Fonction de partage native Android / iOS
 function partagerTarif() {
     if (navigator.share) {
         navigator.share({
@@ -181,9 +179,15 @@ function partagerTarif() {
         .then(() => console.log('Partage réussi !'))
         .catch((error) => console.log('Erreur de partage:', error));
     } else {
-        // Option de secours au cas où le navigateur est très ancien
         alert("Votre navigateur ne supporte pas le partage direct. Copiez le texte affiché pour l'envoyer !");
     }
+}
+
+// Enregistrement automatique du Service Worker pour la gestion du mode hors-ligne
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/transprix-douala/sw.js')
+    .then(() => console.log("Mode hors-ligne prêt !"))
+    .catch((err) => console.log("Erreur PWA : ", err));
 }
 </script>
 </body>
