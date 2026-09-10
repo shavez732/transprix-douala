@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TransPrix Douala - Tarifs Moto et Taxi</title>
-    <!-- Liaison avec le fichier Manifest pour l'installation sur l'écran d'accueil -->
-    <link rel="manifest" href="manifest.json">
+    <!-- Chemin corrigé pour GitHub Pages -->
+    <link rel="manifest" href="/transprix-douala/manifest.json">
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f7f9fa; margin: 0; padding: 15px; color: #333; }
         .container { max-width: 450px; background: white; margin: 10px auto; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
@@ -29,6 +29,9 @@
         .btn-partager { background-color: #0076ff; color: white; margin-top: 15px; font-size: 15px; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: bold; transition: 0.2s; border: none; }
         .btn-partager:hover { background-color: #0056b3; }
 
+        /* Style du bouton d'installation forcée */
+        .btn-installer { background-color: #e67e22; color: white; margin-top: 10px; display: none; font-weight: bold; }
+
         .suggestion-box { margin-top: 35px; border-top: 2px dashed #bdc3c7; padding-top: 20px; text-align: left; }
         .suggestion-box h3 { color: #2c3e50; font-size: 18px; margin-top: 0; }
         .btn-suggestion { background-color: #34495e; }
@@ -44,6 +47,9 @@
     <p class="subtitle">Trouvez le juste prix pour votre trajet</p>
     
     <div class="statut-badge">⚡ Base de données ultra-rapide active</div>
+
+    <!-- Bouton d'installation forcée -->
+    <button id="btnPWAInstall" class="btn-installer">📲 Installer l'application sur mon écran</button>
 
     <!-- RECHERCHE DU DÉPART -->
     <label>📍 Lieu de Départ :</label>
@@ -90,14 +96,12 @@
 </div>
 
 <script>
-// 1. LISTE DE TOUS LES QUARTIERS DE LA BARRE DE RECHERCHE
 const listeQuartiers = [
     "Akwa", "Bali", "Bonabéri", "Bonamoussadi", "Bonanjo", "Bonapriso", 
     "Campus Ange Raphaël", "Campus Ndogbong", "Campus PK 17 (Polytechnique)", 
     "Cité des Palmiers", "New Bell", "Ndogbong", "Ndogpassi", "Ndokoti", "PK 21", "Yassa"
 ];
 
-// 2. BASE DE DONNÉES INTERNE
 const tarifs = {
     "yassa_akwa": { moto: 600, taxi: 500 },
     "ndokoti_campus ndogbong": { moto: 200, taxi: 200 },
@@ -155,16 +159,13 @@ function calculerPrix() {
     
     const clefAller = (depart + "_" + arrivee).toLowerCase();
     const clefRetour = (arrivee + "_" + depart).toLowerCase();
-    
     const trajet = tarifs[clefAller] || tarifs[clefRetour];
     
     if (trajet) {
         document.getElementById("prixMoto").innerText = "🏍️ Moto : " + trajet.moto + " FCFA";
         document.getElementById("prixTaxi").innerText = "🚖 Taxi : " + trajet.taxi + " FCFA";
         document.getElementById("resultatBox").style.display = "block";
-        
-        textePartageGlobal = "D'après TransPrix Douala, le tarif estimé de " + depart + " vers " + arrivee + " est de : \n🏍️ Moto : " + trajet.moto + " F\n🚖 Taxi : " + trajet.taxi + " F.\n\nSimule tes trajets ici : https://github.io";
-        
+        textePartageGlobal = "D'après TransPrix Douala, le tarif de " + depart + " vers " + arrivee + " est : \n🏍️ Moto : " + trajet.moto + " F\n🚖 Taxi : " + trajet.taxi + " F.\n\nSimule tes trajets ici : https://github.io";
     } else {
         alert("Ce trajet spécifique n'est pas encore enregistré. Utilisez le formulaire ci-dessous pour nous suggérer son prix !");
     }
@@ -172,22 +173,38 @@ function calculerPrix() {
 
 function partagerTarif() {
     if (navigator.share) {
-        navigator.share({
-            title: 'TransPrix Douala',
-            text: textePartageGlobal
-        })
-        .then(() => console.log('Partage réussi !'))
-        .catch((error) => console.log('Erreur de partage:', error));
+        navigator.share({ title: 'TransPrix Douala', text: textePartageGlobal });
     } else {
-        alert("Votre navigateur ne supporte pas le partage direct. Copiez le texte affiché pour l'envoyer !");
+        alert("Votre navigateur ne supporte pas le partage direct. Copiez le texte affiché !");
     }
 }
 
-// Enregistrement automatique du Service Worker pour la gestion du mode hors-ligne
+// MANAGEMENT DU BOUTON D'INSTALLATION PWA FORCÉE
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    document.getElementById('btnPWAInstall').style.display = 'block';
+});
+
+document.getElementById('btnPWAInstall').addEventListener('click', async () => {
+    if (deferredPrompt) {
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') {
+            document.getElementById('btnPWAInstall').style.display = 'none';
+        }
+        deferredPrompt = null;
+    }
+});
+
+// Enregistrement du Service Worker avec le chemin complet GitHub Pages
 if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/transprix-douala/sw.js')
-    .then(() => console.log("Mode hors-ligne prêt !"))
-    .catch((err) => console.log("Erreur PWA : ", err));
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/transprix-douala/sw.js')
+        .then(() => console.log("Mode hors-ligne prêt !"))
+        .catch((err) => console.log("Erreur PWA : ", err));
+    });
 }
 </script>
 </body>
