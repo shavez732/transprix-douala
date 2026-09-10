@@ -38,7 +38,7 @@
     <h1>🇨🇲 TransPrix Douala</h1>
     <p class="subtitle">Trouvez le juste prix pour votre trajet</p>
     
-    <div id="statutChargement" class="statut-badge">🟢 Connecté en direct à Google Sheets</div>
+    <div id="statutChargement" class="statut-badge">🟢 Connecté en direct à votre Google Sheets</div>
 
     <!-- RECHERCHE DU DÉPART -->
     <label>📍 Lieu de Départ :</label>
@@ -80,12 +80,13 @@
 </div>
 
 <script>
-// Quartiers par défaut de secours
+// Base des quartiers disponibles par défaut
 let listeQuartiers = ["Akwa", "Bali", "Bonabéri", "Bonamoussadi", "Bonanjo", "Bonapriso", "Campus Ange Raphaël", "Campus Ndogbong", "Campus PK 17 (Polytechnique)", "Cité des Palmiers", "New Bell", "Ndogbong", "Ndogpassi", "Ndokoti", "PK 21", "Yassa"];
 let tarifs = {};
 
-// Utilisation du format TSV public (export tqx=out:csv ou tq) ultra-robuste qui ne subit aucun reformatage de colonnes
-const urlExport = "https://google.com";
+// ID unique extrait de votre lien officiel Google Sheets pour interroger l'API de visualisation
+const sheetId = "1KYk0UMfK49WkpoEz3mux6A25LGa2E4uZDXFJ6fi2n3Y";
+const urlGviz = "https://google.com" + sheetId + "/gviz/tq?tqx=out:json";
 
 function filtrerQuartiers(type) {
     const input = document.getElementById("search" + type);
@@ -133,32 +134,29 @@ async function calculerPrix() {
         return;
     }
 
-    document.getElementById("statutChargement").innerText = "⏳ Récupération des prix sur Google Sheets...";
+    document.getElementById("statutChargement").innerText = "⏳ Interrogation de Google Sheets en temps réel...";
     document.getElementById("statutChargement").style.color = "#e67e22";
 
     try {
-        const response = await fetch(urlExport + "&nocache=" + new Date().getTime());
-        if (!response.ok) throw new Error();
-        const data = await response.text();
+        const response = await fetch(urlGviz + "&cachebust=" + new Date().getTime());
+        const text = await response.text();
         
-        // Découpage propre par ligne
-        const lignes = data.split(/\r?\n/);
+        // Extraction propre de la structure JSON pure fournie par Google
+        const jsonText = text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1);
+        const json = JSON.parse(jsonText);
+        
+        const lignes = json.table.rows;
         let tarifsEnDirect = {};
         let setQuartiers = new Set(listeQuartiers);
 
-        for (let i = 1; i < lignes.length; i++) {
-            let ligne = lignes[i].trim();
-            if (!ligne) continue;
-            
-            // Découpage automatique gérant les virgules et points-virgules de l'application Android
-            let colonnes = ligne.includes(";") ? ligne.split(";") : ligne.split(",");
-            
-            if (colonnes.length >= 4) {
-                // Nettoyage complet des guillemets et espaces invisibles
-                const dep = colonnes[0].replace(/"/g, "").trim();
-                const arr = colonnes[1].replace(/"/g, "").trim();
-                const moto = colonnes[2].replace(/"/g, "").trim();
-                const taxi = colonnes[3].replace(/"/g, "").trim();
+        lignes.forEach(row => {
+            const cellules = row.c;
+            // Vérification stricte que la ligne contient bien des données valides
+            if (cellules && cellules.length >= 4) {
+                const dep = cellules[0] && cellules[0].v ? cellules[0].v.toString().trim() : "";
+                const arr = cellules[1] && cellules[1].v ? cellules[1].v.toString().trim() : "";
+                const moto = cellules[2] && cellules[2].v ? cellules[2].v.toString().trim() : "--";
+                const taxi = cellules[3] && cellules[3].v ? cellules[3].v.toString().trim() : "--";
 
                 if (dep && arr) {
                     setQuartiers.add(dep);
@@ -167,14 +165,14 @@ async function calculerPrix() {
                     tarifsEnDirect[arr.toLowerCase() + "_" + dep.toLowerCase()] = { moto: moto, taxi: taxi };
                 }
             }
-        }
+        });
 
         listeQuartiers = Array.from(setQuartiers).sort();
         
         const clef = (depart + "_" + arrivee).toLowerCase();
         const trajet = tarifsEnDirect[clef];
 
-        document.getElementById("statutChargement").innerText = "🟢 Connecté en direct à Google Sheets";
+        document.getElementById("statutChargement").innerText = "🟢 Connecté en direct à votre Google Sheets";
         document.getElementById("statutChargement").style.color = "#2ecc71";
         
         if (trajet) {
@@ -186,7 +184,7 @@ async function calculerPrix() {
         }
 
     } catch (error) {
-        document.getElementById("statutChargement").innerText = "💡 Mode local actif (Vérifiez l'accès au tableau)";
+        document.getElementById("statutChargement").innerText = "⚠️ Lecture locale active (Erreur de structure Sheets)";
         document.getElementById("statutChargement").style.color = "#34495e";
         console.error(error);
     }
