@@ -24,6 +24,10 @@
         .resultat { margin-top: 25px; padding: 15px; background: #ebf5fb; border: 1px solid #a9dfbf; border-radius: 8px; display: none; }
         .prix { font-size: 18px; font-weight: bold; color: #2c3e50; margin: 8px 0; text-align: left; }
         
+        /* Style du bouton WhatsApp */
+        .btn-whatsapp { background-color: #25d366; color: white; margin-top: 15px; font-size: 15px; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; padding: 12px; border-radius: 8px; font-weight: bold; transition: 0.2s; box-sizing: border-box; }
+        .btn-whatsapp:hover { background-color: #128c7e; }
+
         .suggestion-box { margin-top: 35px; border-top: 2px dashed #bdc3c7; padding-top: 20px; text-align: left; }
         .suggestion-box h3 { color: #2c3e50; font-size: 18px; margin-top: 0; }
         .btn-suggestion { background-color: #34495e; }
@@ -64,6 +68,11 @@
         <small style="color: #7f8c8d; display:block; text-align:left; margin-top:10px;">
             * Les prix varient selon l'heure, la météo ou l'état de la route.
         </small>
+        
+        <!-- BOUTON DE PARTAGE WHATSAPP EN DIRECT -->
+        <a id="shareWhatsapp" class="btn-whatsapp" href="#" target="_blank">
+            🟢 Partager ce tarif sur WhatsApp
+        </a>
     </div>
 
     <!-- FORMULAIRE DE SUGGESTION -->
@@ -87,7 +96,7 @@ const listeQuartiers = [
     "Cité des Palmiers", "New Bell", "Ndogbong", "Ndogpassi", "Ndokoti", "PK 21", "Yassa"
 ];
 
-// 2. BASE DE DONNÉES INTERNE (Mise à jour directement avec vos vrais prix du tableau)
+// 2. BASE DE DONNÉES INTERNE
 const tarifs = {
     "yassa_akwa": { moto: 600, taxi: 500 },
     "ndokoti_campus ndogbong": { moto: 200, taxi: 200 },
@@ -141,7 +150,6 @@ function calculerPrix() {
         return;
     }
     
-    // Test du trajet dans les deux sens (Aller et Retour)
     const clefAller = (depart + "_" + arrivee).toLowerCase();
     const clefRetour = (arrivee + "_" + depart).toLowerCase();
     
@@ -151,6 +159,11 @@ function calculerPrix() {
         document.getElementById("prixMoto").innerText = "🏍️ Moto : " + trajet.moto + " FCFA";
         document.getElementById("prixTaxi").innerText = "🚖 Taxi : " + trajet.taxi + " FCFA";
         document.getElementById("resultatBox").style.display = "block";
+        
+        // Configuration automatique du texte du bouton WhatsApp avec le lien contenant transprix-douala
+        const texteAEnvoyer = "D'après TransPrix Douala, le tarif estimé de " + depart + " vers " + arrivee + " est de : 🏍️ Moto : " + trajet.moto + " F | 🚖 Taxi : " + trajet.taxi + " F. Vérifie tes prix ici : https://github.io";
+        document.getElementById("shareWhatsapp").href = "https://whatsapp.com" + encodeURIComponent(texteAEnvoyer);
+        
     } else {
         alert("Ce trajet spécifique n'est pas encore enregistré. Utilisez le formulaire ci-dessous pour nous suggérer son prix !");
     }
