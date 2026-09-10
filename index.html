@@ -29,7 +29,7 @@
         .btn-suggestion { background-color: #34495e; }
         .btn-suggestion:hover { background-color: #2c3e50; }
         
-        .statut-badge { color: #2ecc71; font-weight: bold; margin: 10px 0; display: block; text-align: center; font-size: 14px; }
+        .statut-badge { color: #3498db; font-weight: bold; margin: 10px 0; display: block; text-align: center; font-size: 14px; }
     </style>
 </head>
 <body>
@@ -38,19 +38,19 @@
     <h1>🇨🇲 TransPrix Douala</h1>
     <p class="subtitle">Trouvez le juste prix pour votre trajet</p>
     
-    <div class="statut-badge">⚡ Base de données ultra-rapide active</div>
+    <div id="statutChargement" class="statut-badge">🟢 Connecté en direct à votre tableau Google Sheets</div>
 
     <!-- RECHERCHE DU DÉPART -->
     <label>📍 Lieu de Départ :</label>
     <div class="search-container">
-        <input type="text" id="searchDepart" placeholder="Tapez le quartier (ex: Yassa, Ndokoti...)" oninput="filtrerQuartiers('Depart')">
+        <input type="text" id="searchDepart" placeholder="Tapez le quartier (ex: Yassa, Bali...)" oninput="filtrerQuartiers('Depart')">
         <div id="optionsDepart" class="suggestions-list"></div>
     </div>
 
     <!-- RECHERCHE DE L'ARRIVÉE -->
     <label>🏁 Lieu d'Arrivée :</label>
     <div class="search-container">
-        <input type="text" id="searchArrivee" placeholder="Tapez le quartier (ex: Akwa...)" oninput="filtrerQuartiers('Arrivee')">
+        <input type="text" id="searchArrivee" placeholder="Tapez le quartier (ex: Bonabéri...)" oninput="filtrerQuartiers('Arrivee')">
         <div id="optionsArrivee" class="suggestions-list"></div>
     </div>
 
@@ -80,31 +80,11 @@
 </div>
 
 <script>
-// 1. LISTE DE TOUS VOS QUARTIERS (Pour la barre de recherche automatique)
-const listeQuartiers = [
-    "Akwa", 
-    "Bonamoussadi", 
-    "Bonanjo", 
-    "Bonapriso", 
-    "Campus Ange Raphaël", 
-    "Campus Ndogbong", 
-    "Campus PK 17 (Polytechnique)", 
-    "Cité des Palmiers", 
-    "New Bell", 
-    "Ndogbong", 
-    "Ndogpassi", 
-    "Ndokoti", 
-    "PK 21", 
-    "Yassa"
-];
+// Liste globale étendue pour que l'auto-complétion propose vos nouveaux choix
+const listeQuartiers = ["Akwa", "Bali", "Bonabéri", "Bonamoussadi", "Bonanjo", "Bonapriso", "Campus Ange Raphaël", "Campus Ndogbong", "Campus PK 17 (Polytechnique)", "Cité des Palmiers", "New Bell", "Ndogbong", "Ndogpassi", "Ndokoti", "PK 21", "Yassa"];
 
-// 2. VOS TRAJETS ET TARIFS (Ajoutez de nouvelles lignes ici très facilement)
-const tarifs = {
-    "yassa_akwa": { moto: 600, taxi: 500 },
-    "ndokoti_campus ndogbong": { moto: 200, taxi: 200 },
-    "yassa_ndokoti": { moto: 400, taxi: 300 },
-    "bonamoussadi_akwa": { moto: 500, taxi: 300 }
-};
+// Votre lien Excel Google Sheets direct en version CSV
+const urlGoogleSheets = "https://google.com";
 
 function filtrerQuartiers(type) {
     const input = document.getElementById("search" + type);
@@ -114,7 +94,6 @@ function filtrerQuartiers(type) {
     box.innerHTML = "";
     if (!texte) { box.style.display = "none"; return; }
     
-    // Filtre intelligent
     const correspondances = listeQuartiers.filter(q => q.toLowerCase().includes(texte));
     
     if (correspondances.length > 0) {
@@ -133,7 +112,6 @@ function filtrerQuartiers(type) {
     }
 }
 
-// Fermer les suggestions au clic extérieur
 document.addEventListener("click", function(e) {
     if (e.target && e.target.id && !e.target.id.startsWith("search")) {
         document.getElementById("optionsDepart").style.display = "none";
@@ -141,7 +119,8 @@ document.addEventListener("click", function(e) {
     }
 });
 
-function calculerPrix() {
+// Le moteur va chercher et lire les données Excel en direct au moment du clic
+async function calculerPrix() {
     const depart = document.getElementById("searchDepart").value.trim();
     const arrivee = document.getElementById("searchArrivee").value.trim();
     
@@ -153,20 +132,54 @@ function calculerPrix() {
         alert("Le départ et l'arrivée sont identiques !");
         return;
     }
-    
-    // Nettoyage et construction de la clé de recherche
-    const clefAller = (depart + "_" + arrivee).toLowerCase();
-    const clefRetour = (arrivee + "_" + depart).toLowerCase();
-    
-    // Recherche de la correspondance dans les deux sens
-    const trajet = tarifs[clefAller] || tarifs[clefRetour];
-    
-    if (trajet) {
-        document.getElementById("prixMoto").innerText = "🏍️ Moto : " + trajet.moto + " FCFA";
-        document.getElementById("prixTaxi").innerText = "   Taxi : " + trajet.taxi + " FCFA";
-        document.getElementById("resultatBox").style.display = "block";
-    } else {
-        alert("Ce trajet spécifique n'est pas encore enregistré. Proposez son tarif juste en bas !");
+
+    document.getElementById("statutChargement").innerText = "⏳ Interrogation du tableau Google Sheets...";
+    document.getElementById("statutChargement").style.color = "#e67e22";
+
+    try {
+        const response = await fetch(urlGoogleSheets + "&cachebust=" + new Date().getTime());
+        if (!response.ok) throw new Error();
+        const data = await response.text();
+        
+        const lignes = data.split(/\r?\n/);
+        let tarifsEnDirect = {};
+
+        for (let i = 1; i < lignes.length; i++) {
+            let ligne = lignes[i].trim();
+            if (!ligne) continue;
+            
+            let colonnes = ligne.includes(";") ? ligne.split(";") : ligne.split(",");
+            
+            if (colonnes.length >= 4) {
+                const dep = colonnes[0] ? colonnes[0].trim().toLowerCase() : "";
+                const arr = colonnes[1] ? colonnes[1].trim().toLowerCase() : "";
+                const moto = colonnes[2] ? colonnes[2].trim() : "";
+                const taxi = colonnes[3] ? colonnes[3].trim() : "";
+
+                if (dep && arr) {
+                    tarifsEnDirect[dep + "_" + arr] = { moto: moto, taxi: taxi };
+                    tarifsEnDirect[arr + "_" + dep] = { moto: moto, taxi: taxi };
+                }
+            }
+        }
+
+        const clef = (depart + "_" + arrivee).toLowerCase();
+        const trajet = tarifsEnDirect[clef];
+
+        document.getElementById("statutChargement").innerText = "🟢 Connecté en direct à votre tableau Google Sheets";
+        document.getElementById("statutChargement").style.color = "#2ecc71";
+        
+        if (trajet) {
+            document.getElementById("prixMoto").innerText = "🏍️ Moto : " + trajet.moto + " FCFA";
+            document.getElementById("prixTaxi").innerText = "🚖 Taxi : " + trajet.taxi + " FCFA";
+            document.getElementById("resultatBox").style.display = "block";
+        } else {
+            alert("Ce trajet n'est pas encore écrit dans votre tableau Excel mobile. Ouvrez Google Sheets et ajoutez-le !");
+        }
+
+    } catch (error) {
+        document.getElementById("statutChargement").innerText = "⚠️ Problème de réseau mobile. Réessayez.";
+        document.getElementById("statutChargement").style.color = "#e74c3c";
     }
 }
 </script>
