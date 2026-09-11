@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TransPrix Douala</title>
     <link rel="manifest" href="/transprix-douala/manifest.json">
-    <script src="https://cloudflare.com"></script>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #f7f9fa; margin: 0; padding: 15px; color: #333; }
         .container { max-width: 450px; background: white; margin: 10px auto; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); }
@@ -31,7 +30,7 @@
 <div class="container">
     <h1>🇨🇲 TransPrix Douala</h1>
     <p class="subtitle">Trouvez le juste prix pour votre trajet</p>
-    <div id="statutChargement" class="statut-badge" style="color: #e67e22;">🔄 Synchronisation en direct avec votre Google Sheets...</div>
+    <div id="statutChargement" class="statut-badge" style="color: #e67e22;">🔄 Connexion sécurisée au tunnel SheetDB...</div>
     <button id="btnPWAInstall" class="btn-installer">📲 Installer l'application sur mon écran</button>
     <label>📍 Lieu de Départ :</label>
     <div class="search-container"><input type="text" id="searchDepart" placeholder="Tapez le quartier..." oninput="filtrerQuartiers('Depart')"><div id="optionsDepart" class="suggestions-list"></div></div>
@@ -67,32 +66,31 @@ let tarifs = {
     "bali_ndokoti":{moto:500,taxi:350},"new bell_bonapriso":{moto:300,taxi:250},"yassa_ndogpassi":{moto:200,taxi:150}
 };
 let textePartageGlobal = "";
-const urlCSV = "https://google.com";
+
+// Votre lien d'API SheetDB sécurisé actif
+const urlSheetDB = "https://sheetdb.io/api/v1/zgrhigxn3ri2m";
 
 async function chargerDonneesSheets() {
     try {
-        const response = await fetch(urlCSV + "&cb=" + new Date().getTime());
-        const csvText = await response.text();
-        Papa.parse(csvText, {
-            header: true, skipEmptyLines: true,
-            complete: function(results) {
-                let setQ = new Set(listeQuartiers);
-                results.data.forEach(row => {
-                    let d = (row.Depart || row.depart || "").toString().replace(/"/g, "").trim();
-                    let a = (row.Arrivee || row.arrivee || "").toString().replace(/"/g, "").trim();
-                    let m = (row.Moto || row.moto || "").toString().replace(/"/g, "").trim();
-                    let t = (row.Taxi || row.taxi || "").toString().replace(/"/g, "").trim();
-                    if (d && a) {
-                        setQ.add(d); setQ.add(a);
-                        tarifs[d.toLowerCase() + "_" + a.toLowerCase()] = { moto: m, taxi: t };
-                        tarifs[a.toLowerCase() + "_" + d.toLowerCase()] = { moto: m, taxi: t };
-                    }
-                });
-                listeQuartiers = Array.from(setQ).sort();
-                document.getElementById("statutChargement").innerText = "🟢 Connecté en direct à votre Google Sheets !";
-                document.getElementById("statutChargement").style.color = "#2ecc71";
+        const response = await fetch(urlSheetDB);
+        const donnees = await response.json();
+        
+        let setQ = new Set(listeQuartiers);
+        donnees.forEach(row => {
+            let d = (row.Depart || row.depart || "").toString().trim();
+            let a = (row.Arrivee || row.arrivee || "").toString().trim();
+            let m = (row.Moto || row.moto || "").toString().trim();
+            let t = (row.Taxi || row.taxi || "").toString().trim();
+
+            if (d && a) {
+                setQ.add(d); setQ.add(a);
+                tarifs[d.toLowerCase() + "_" + a.toLowerCase()] = { moto: m, taxi: t };
+                tarifs[a.toLowerCase() + "_" + d.toLowerCase()] = { moto: m, taxi: t };
             }
         });
+        listeQuartiers = Array.from(setQ).sort();
+        document.getElementById("statutChargement").innerText = "🟢 Tunnel SheetDB connecté en direct !";
+        document.getElementById("statutChargement").style.color = "#2ecc71";
     } catch (e) {
         document.getElementById("statutChargement").innerText = "🟢 Base hybride active (30 trajets fonctionnels)";
         document.getElementById("statutChargement").style.color = "#2ecc71";
