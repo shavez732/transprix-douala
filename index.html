@@ -31,7 +31,7 @@
 <div class="container">
     <h1>🇨🇲 TransPrix Douala</h1>
     <p class="subtitle">Trouvez le juste prix pour votre trajet</p>
-    <div id="statutChargement" class="statut-badge" style="color: #e67e22;">🔄 Synchronisation avec votre Google Sheets...</div>
+    <div id="statutChargement" class="statut-badge" style="color: #e67e22;">🔄 Synchronisation en direct avec votre Google Sheets...</div>
     <button id="btnPWAInstall" class="btn-installer">📲 Installer l'application sur mon écran</button>
     <label>📍 Lieu de Départ :</label>
     <div class="search-container"><input type="text" id="searchDepart" placeholder="Tapez le quartier..." oninput="filtrerQuartiers('Depart')"><div id="optionsDepart" class="suggestions-list"></div></div>
@@ -56,21 +56,17 @@
     </div>
 </div>
 <script>
-let listeQuartiers = ["Akwa", "Bali", "Bonabéri", "Bonamoussadi", "Bonanjo", "Bonapriso", "Campus Ange Raphaël (ESSEC)", "Campus Ndogbong (IUT)", "Campus PK 17 (Polytechnique)", "Cité des Palmiers", "Deido", "Kotto", "Logbaba", "Logpom", "New Bell", "Ndogbong", "Ndogpassi", "Ndokoti", "Nyalla", "PK 14", "PK 21", "Yassa"];
+let listeQuartiers = ["Akwa","Bali","Bonabéri","Bonamoussadi","Bonanjo","Bonapriso","Campus Ange Raphaël (ESSEC)","Campus Ndogbong (IUT)","Campus PK 17 (Polytechnique)","Cité des Palmiers","Deido","Kotto","Logbaba","Logpom","New Bell","Ndogbong","Ndogpassi","Ndokoti","Nyalla","PK 14","PK 21","Yassa"];
 let tarifs = {
-    "yassa_akwa": { moto: 600, taxi: 500 }, "yassa_ndokoti": { moto: 400, taxi: 350 }, "yassa_bonanjo": { moto: 700, taxi: 600 },
-    "ndogpassi_ndokoti": { moto: 300, taxi: 250 }, "nyalla_ndokoti": { moto: 250, taxi: 200 }, "nyalla_akwa": { moto: 500, taxi: 400 },
-    "ndokoti_campus ndogbong (iut)": { moto: 200, taxi: 200 }, "ndokoti_campus ange raphaël (essec)": { moto: 250, taxi: 200 },
-    "ndokoti_campus pk 17 (polytechnique)": { moto: 450, taxi: 350 }, "campus ndogbong (iut)_campus ange raphaël (essec)": { moto: 250, taxi: 200 },
-    "campus ndogbong (iut)_campus pk 17 (polytechnique)": { moto: 500, taxi: 400 }, "ndokoti_akwa": { moto: 400, taxi: 300 },
-    "ndokoti_bonanjo": { moto: 500, taxi: 350 }, "ndokoti_deido": { moto: 350, taxi: 250 }, "ndokoti_logbaba": { moto: 250, taxi: 200 },
-    "ndokoti_pk 14": { moto: 350, taxi: 300 }, "ndokoti_pk 21": { moto: 600, taxi: 450 }, "pk 14_campus pk 17 (polytechnique)": { moto: 200, taxi: 150 },
-    "bonamoussadi_akwa": { moto: 500, taxi: 300 }, "bonamoussadi_ndokoti": { moto: 400, taxi: 300 }, "bonamoussadi_deido": { moto: 300, taxi: 250 },
-    "logpom_ndokoti": { moto: 350, taxi: 250 }, "kotto_akwa": { moto: 600, taxi: 350 }, "cite des palmiers_ndokoti": { moto: 250, taxi: 200 },
-    "cite des palmiers_akwa": { moto: 500, taxi: 350 }, "bonanjo_bonapriso": { moto: 250, taxi: 200 }, "bonanjo_bali": { moto: 200, taxi: 150 },
-    "akwa_bonanjo": { moto: 250, taxi: 200 }, "new bell_akwa": { moto: 300, taxi: 200 }, "new bell_ndokoti": { moto: 400, taxi: 300 },
-    "bonabéri_akwa": { moto: 400, taxi: 300 }, "bonabéri_deido": { moto: 300, taxi: 250 }, "bonabéri_bonanjo": { moto: 500, taxi: 350 },
-    "bali_ndokoti": { moto: 500, taxi: 350 }, "new bell_bonapriso": { moto: 300, taxi: 250 }
+    "yassa_akwa":{moto:600,taxi:500},"yassa_ndokoti":{moto:400,taxi:350},"yassa_bonanjo":{moto:700,taxi:600},"ndogpassi_ndokoti":{moto:300,taxi:250},"nyalla_ndokoti":{moto:250,taxi:200},"nyalla_akwa":{moto:500,taxi:400},
+    "ndokoti_campus ndogbong (iut)":{moto:200,taxi:200},"ndokoti_campus ange raphaël (essec)":{moto:250,taxi:200},"ndokoti_campus pk 17 (polytechnique)":{moto:450,taxi:350},"campus ndogbong (iut)_campus ange raphaël (essec)":{moto:250,taxi:200},
+    "campus ndogbong (iut)_campus pk 17 (polytechnique)":{moto:500,taxi:400},"ndokoti_akwa":{moto:400,taxi:300},"ndokoti_bonanjo":{moto:500,taxi:350},"ndokoti_deido":{moto:350,taxi:250},"ndokoti_logbaba":{moto:250,taxi:200},
+    "ndokoti_pk 14":{moto:350,taxi:300},"ndokoti_pk 21":{moto:600,taxi:450},"pk 14_campus pk 17 (polytechnique)":{moto:200,taxi:150},"bonamoussadi_akwa":{moto:500,taxi:300},"bonamoussadi_ndokoti":{moto:400,taxi:300},
+    "bonamoussadi_deido":{moto:300,taxi:250},"logpom_ndokoti":{moto:350,taxi:250},"kotto_akwa":{moto:600,taxi:350},"cite des palmiers_ndokoti":{moto:250,taxi:200},"cite des palmiers_akwa":{moto:500,taxi:350},
+    "bonanjo_bonapriso":{moto:250,taxi:200},"bonanjo_bali":{moto:200,taxi:150},"akwa_bonanjo":{moto:250,taxi:200},"new bell_akwa":{moto:300,taxi:200},"new bell_ndokoti":{moto:400,taxi:300},"bonabéri_akwa":{moto:400,taxi:300},
+    "bonabéri_deido":{moto:300,taxi:250},"bonabéri_bonanjo":{moto:500,taxi:350},
+    "bali_ndokoti":{moto:500,taxi:350},"new bell_bonapriso":{moto:300,taxi:250},
+    "yassa_ndogpassi":{moto:200,taxi:150} // Inclus d'office pour parer le délai Google !
 };
 let textePartageGlobal = "";
 const urlCSV = "https://google.com";
@@ -80,25 +76,25 @@ async function chargerDonneesSheets() {
         const response = await fetch(urlCSV + "&cb=" + new Date().getTime());
         const csvText = await response.text();
         Papa.parse(csvText, {
-            header: true, // Utilisation de l'analyse automatique des en-têtes de colonnes de Google Sheets
+            header: false, // Forçage en lecture par index de case brute (ignore totalement les en-têtes)
             skipEmptyLines: true,
             complete: function(results) {
-                let setQ = new Set(listeQuartiers);
-                
-                results.data.forEach(row => {
-                    // Lecture sécurisée insensible à la casse des colonnes Depart, Arrivee, Moto, Taxi
-                    let d = (row.Depart || row.depart || "").toString().trim();
-                    let a = (row.Arrivee || row.arrivee || "").toString().trim();
-                    let m = (row.Moto || row.moto || "").toString().trim();
-                    let t = (row.Taxi || row.taxi || "").toString().trim();
-
-                    if (d && a) {
-                        setQ.add(d);
-                        setQ.add(a);
-                        tarifs[d.toLowerCase() + "_" + a.toLowerCase()] = { moto: m, taxi: t };
-                        tarifs[a.toLowerCase() + "_" + d.toLowerCase()] = { moto: m, taxi: t };
+                let setQ = new Set(listeQuartiers); let donnees = results.data;
+                for(let i = 1; i < donnees.length; i++) {
+                    let r = donnees[i];
+                    if (r && r.length >= 4) {
+                        // Extraction par position stricte (0=Départ, 1=Arrivée, 2=Moto, 3=Taxi)
+                        let d = r[0] ? r[0].toString().replace(/"/g, "").trim() : "";
+                        let a = r[1] ? r[1].toString().replace(/"/g, "").trim() : "";
+                        let m = r[2] ? r[2].toString().replace(/"/g, "").trim() : "";
+                        let t = r[3] ? r[3].toString().replace(/"/g, "").trim() : "";
+                        if (d && a) {
+                            setQ.add(d); setQ.add(a);
+                            tarifs[d.toLowerCase() + "_" + a.toLowerCase()] = { moto: m, taxi: t };
+                            tarifs[a.toLowerCase() + "_" + d.toLowerCase()] = { moto: m, taxi: t };
+                        }
                     }
-                });
+                }
                 listeQuartiers = Array.from(setQ).sort();
                 document.getElementById("statutChargement").innerText = "🟢 Base hybride synchronisée en direct";
                 document.getElementById("statutChargement").style.color = "#2ecc71";
@@ -128,7 +124,7 @@ function calculerPrix() {
     if (!d || !a || d.toLowerCase() === a.toLowerCase()) { alert("Sélectionnez deux quartiers différents."); return; }
     const trajet = tarifs[(d + "_" + a).toLowerCase()] || tarifs[(a + "_" + d).toLowerCase()];
     if (trajet) {
-        document.getElementById("prixMoto").innerText = "🏍️ Moto : " + trajet.moto + " FCFA"; document.getElementById("prixTaxi").innerText = "🚖 Taxi : " + trajet.taxi + " FCFA"; document.getElementById("resultatBox").style.display = "block";
+        document.getElementById("prixMoto").innerText = "🏍️ Moto : " + trajet.moto + " FCFA"; document.getElementById("prixTaxi").innerText = "   Taxi : " + trajet.taxi + " FCFA"; document.getElementById("resultatBox").style.display = "block";
         textePartageGlobal = "Tarif TransPrix Douala (" + d + " ➡️ " + a + ") :\n🏍️ Moto : " + trajet.moto + " F\n🚖 Taxi : " + trajet.taxi + " F.\n\nSimule ici : https://github.io";
     } else { alert("Ce trajet n'est pas encore répertorié."); }
 }
