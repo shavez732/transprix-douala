@@ -56,7 +56,7 @@
     </div>
 </div>
 <script>
-let listeQuartiers = ["Akwa","Bali","Bonabéri","Bonamoussadi","Bonanjo","Bonapriso","Campus Ange Raphaël (ESSEC)","Campus Ndogbong (IUT)","Campus PK 17 (Polytechnique)","Cité des Palmiers","Deido","Kotto","Logbaba","Logpom","New Bell","Ndogbong","Ndogpassi","Ndokoti","Nyalla","PK 14","PK 21","Yassa"];
+let listeQuartiers = ["Akwa","Bali","Bonabéri","Bonamoussadi","Bonanjo","Bonapriso","Campus Ange Raphaël (ESSEC)","Campus Ndogbong (IUT)","Campus PK 17 (Polytechnique)","Cité des Palmiers","Deido","Denver","Kotto","Logbaba","Logpom","New Bell","Ndogbong","Ndogpassi","Ndokoti","Nyalla","PK 14","PK 21","Yassa"];
 let tarifs = {
     "yassa_akwa":{moto:600,taxi:500},"yassa_ndokoti":{moto:400,taxi:350},"yassa_bonanjo":{moto:700,taxi:600},"ndogpassi_ndokoti":{moto:300,taxi:250},"nyalla_ndokoti":{moto:250,taxi:200},"nyalla_akwa":{moto:500,taxi:400},
     "ndokoti_campus ndogbong (iut)":{moto:200,taxi:200},"ndokoti_campus ange raphaël (essec)":{moto:250,taxi:200},"ndokoti_campus pk 17 (polytechnique)":{moto:450,taxi:350},"campus ndogbong (iut)_campus ange raphaël (essec)":{moto:250,taxi:200},
@@ -67,43 +67,33 @@ let tarifs = {
     "bali_ndokoti":{moto:500,taxi:350},"new bell_bonapriso":{moto:300,taxi:250},"yassa_ndogpassi":{moto:200,taxi:150}
 };
 let textePartageGlobal = "";
+// CORRECTION CLÉ : Utilisation du canal d'exportation directe pour forcer la mise à jour sans cache Google
 const urlCSV = "https://google.com";
 
 async function chargerDonneesSheets() {
     try {
-        const response = await fetch(urlCSV + "&cb=" + new Date().getTime());
+        const response = await fetch(urlCSV + "&cachebust=" + new Date().getTime());
         const csvText = await response.text();
         Papa.parse(csvText, {
-            header: true, // Utilisation des titres de colonnes
+            header: true,
             skipEmptyLines: true,
             complete: function(results) {
                 let setQ = new Set(listeQuartiers);
-                
                 results.data.forEach(row => {
-                    // Analyse dynamique par mot-clé (cherche "depart" peu importe la casse)
-                    let keys = Object.keys(row);
-                    let kDep = keys.find(k => k.toLowerCase().trim() === 'depart');
-                    let kArr = keys.find(k => k.toLowerCase().trim() === 'arrivee');
-                    let kMot = keys.find(k => k.toLowerCase().trim() === 'moto');
-                    let kTax = keys.find(k => k.toLowerCase().trim() === 'taxi');
+                    let d = (row.Depart || row.depart || "").toString().replace(/"/g, "").trim();
+                    let a = (row.Arrivee || row.arrivee || "").toString().replace(/"/g, "").trim();
+                    let m = (row.Moto || row.moto || "").toString().replace(/"/g, "").trim();
+                    let t = (row.Taxi || row.taxi || "").toString().replace(/"/g, "").trim();
 
-                    if (kDep && kArr && row[kDep] && row[kArr]) {
-                        let d = row[kDep].toString().replace(/"/g, "").trim();
-                        let a = row[kArr].toString().replace(/"/g, "").trim();
-                        let m = kMot && row[kMot] ? row[kMot].toString().replace(/"/g, "").trim() : "--";
-                        let t = kTax && row[kTax] ? row[kTax].toString().replace(/"/g, "").trim() : "--";
-
-                        if (d && a) {
-                            setQ.add(d); setQ.add(a);
-                            tarifs[d.toLowerCase() + "_" + a.toLowerCase()] = { moto: m, taxi: t };
-                            tarifs[a.toLowerCase() + "_" + d.toLowerCase()] = { moto: m, taxi: t };
-                        }
+                    if (d && a) {
+                        setQ.add(d); setQ.add(a);
+                        tarifs[d.toLowerCase() + "_" + a.toLowerCase()] = { moto: m, taxi: t };
+                        tarifs[a.toLowerCase() + "_" + d.toLowerCase()] = { moto: m, taxi: t };
                     }
                 });
                 listeQuartiers = Array.from(setQ).sort();
-                document.getElementById("statutChargement").innerText = "🟢 Base de données connectée en direct";
+                document.getElementById("statutChargement").innerText = "🟢 Connecté en direct à votre Google Sheets !";
                 document.getElementById("statutChargement").style.color = "#2ecc71";
-                setTimeout(() => { document.getElementById("statutChargement").style.display = "none"; }, 2500);
             }
         });
     } catch (e) {
