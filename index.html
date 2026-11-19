@@ -12,123 +12,301 @@
         p.subtitle { color: #7f8c8d; font-size: 14px; margin: 0 0 20px 0; text-align: center; }
         .search-container { position: relative; margin-top: 5px; }
         label { font-weight: bold; display: block; margin-top: 15px; font-size: 14px; color: #2c3e50; }
-        input, button, textarea { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ccd1d1; border-radius: 8px; font-size: 16px; box-sizing: border-box; }
-        input:focus, textarea:focus { border-color: #3498db; outline: none; }
-        .suggestions-list { position: absolute; width: 100%; background: white; border: 1px solid #ccc; border-top: none; border-radius: 0 0 8px 8px; max-height: 150px; overflow-y: auto; z-index: 10; display: none; }
-        .suggestions-list div { padding: 10px; cursor: pointer; }
-        .suggestions-list div:hover { background: #f1f1f1; }
-        button { background: #2ecc71; color: white; border: none; font-weight: bold; cursor: pointer; margin-top: 25px; }
-        .resultat { margin-top: 25px; padding: 15px; background: #ebf5fb; border: 1px solid #a9dfbf; border-radius: 8px; display: none; }
-        .prix { font-size: 18px; font-weight: bold; color: #2c3e50; margin: 8px 0; }
-        .btn-partager { background: #0076ff; color: white; margin-top: 15px; font-size: 15px; display: flex; align-items: center; justify-content: center; gap: 8px; border: none; }
-        .btn-installer { background: #e67e22; color: white; margin-top: 10px; display: none; font-weight: bold; }
-        .suggestion-box { margin-top: 35px; border-top: 2px dashed #bdc3c7; padding-top: 20px; }
-        .statut-badge { font-weight: bold; margin: 10px 0; display: block; text-align: center; font-size: 14px; }
+        input, button, textarea { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 15px; }
+        input:focus, textarea:focus { border-color: #e67e22; outline: none; }
+        button { background: #e67e22; color: white; font-weight: bold; border: none; cursor: pointer; margin-top: 15px; transition: 0.2s; }
+        button:hover { background: #d35400; }
+        .options-list { position: absolute; width: 100%; max-height: 200px; overflow-y: auto; background: white; border: 1px solid #ddd; border-top: none; border-radius: 0 0 8px 8px; z-index: 1000; display: none; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .options-list div { padding: 10px 12px; cursor: pointer; border-bottom: 1px solid #f0f0f0; font-size: 14px; }
+        .options-list div:hover { background: #fef5e7; color: #e67e22; font-weight: bold; }
+        .result-box { display: none; margin-top: 20px; padding: 15px; background: #fdfefe; border: 1px solid #e0e6ed; border-radius: 10px; }
+        .card-tarif { padding: 12px; border-radius: 8px; margin-bottom: 12px; }
+        .card-officiel { background: #eafaf1; border-left: 5px solid #2ecc71; }
+        .card-estime { background: #fef9e7; border-left: 5px solid #f39c12; }
+        .card-title { font-size: 13px; font-weight: bold; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px; }
+        .price-line { font-size: 17px; font-weight: bold; margin: 4px 0; color: #2c3e50; }
+        .note { font-size: 12px; color: #7f8c8d; margin-top: 8px; }
+        .btn-share { background: #27ae60; margin-top: 10px; }
+        .btn-share:hover { background: #219150; }
+        .btn-pwa { display: none; background: #2980b9; margin-bottom: 15px; }
+        .suggestion-box { margin-top: 25px; padding-top: 15px; border-top: 1px dashed #ccc; }
+        #statutChargement { text-align: center; font-size: 13px; margin-bottom: 10px; color: #e67e22; font-weight: bold; }
     </style>
 </head>
 <body>
+
 <div class="container">
     <h1>🇨🇲 TransPrix Douala</h1>
     <p class="subtitle">Trouvez le juste prix pour votre trajet</p>
-    <div id="statutChargement" class="statut-badge" style="color: #e67e22;">🔄 Connexion sécurisée au tunnel SheetDB...</div>
-    <button id="btnPWAInstall" class="btn-installer">📲 Installer l'application sur mon écran</button>
-    <label>📍 Lieu de Départ :</label>
-    <div class="search-container"><input type="text" id="searchDepart" placeholder="Tapez le quartier..." oninput="filtrerQuartiers('Depart')"><div id="optionsDepart" class="suggestions-list"></div></div>
-    <label>🏁 Lieu d'Arrivée :</label>
-    <div class="search-container"><input type="text" id="searchArrivee" placeholder="Tapez le quartier..." oninput="filtrerQuartiers('Arrivee')"><div id="optionsArrivee" class="suggestions-list"></div></div>
-    <button id="btnCalculer" onclick="calculerPrix()">Afficher les Tarifs</button>
-    <div id="resultatBox" class="resultat">
-        <h3 style="margin:0; color:#2980b9;">Tarifs indicatifs :</h3>
-        <p class="prix" id="prixMoto">🏍️ Moto : -- FCFA</p>
-        <p class="prix" id="prixTaxi">🚖 Taxi : -- FCFA</p>
-        <small style="color:#7f8c8d;">* Les prix varient selon l'heure ou la météo.</small>
-        <button id="btnPartager" class="btn-partager" onclick="partagerTarif()">🔗 Partager ce tarif (WhatsApp, etc.)</button>
+    <div id="statutChargement">🔄 Connexion sécurisée au tunnel SheetDB...</div>
+
+    <button id="btnPWAInstall" class="btn-pwa">📲 Installer l'application sur mon écran</button>
+
+    <label for="searchDepart">📍 Lieu de Départ :</label>
+    <div class="search-container">
+        <input type="text" id="searchDepart" placeholder="Ex: Total Nkolbong, Akwa, Ndokoti..." oninput="filtrerQuartiers('Depart')" autocomplete="off">
+        <div id="optionsDepart" class="options-list"></div>
     </div>
+
+    <label for="searchArrivee">🏁 Lieu d'Arrivée :</label>
+    <div class="search-container">
+        <input type="text" id="searchArrivee" placeholder="Ex: PK14, Bonamoussadi, Deido..." oninput="filtrerQuartiers('Arrivee')" autocomplete="off">
+        <div id="optionsArrivee" class="options-list"></div>
+    </div>
+
+    <button onclick="calculerPrix()">Afficher les Tarifs</button>
+
+    <div id="resultatBox" class="result-box">
+        <div id="blocOfficiel" class="card-tarif card-officiel" style="display: none;">
+            <div class="card-title" style="color: #27ae60;">✅ Tarif Officiel (Base de données)</div>
+            <div id="prixMotoOfficiel" class="price-line">🏍️ Moto : -- FCFA</div>
+            <div id="prixTaxiOfficiel" class="price-line">🚖 Taxi : -- FCFA</div>
+        </div>
+
+        <div id="blocEstime" class="card-tarif card-estime" style="display: none;">
+            <div class="card-title" style="color: #d68910;">🧮 Tarif Estimé (Algorithme réseau)</div>
+            <div id="prixMotoEstime" class="price-line">🏍️ Moto : -- FCFA</div>
+            <div id="prixTaxiEstime" class="price-line">🚖 Taxi : -- FCFA</div>
+            <div id="detailEscale" class="note" style="font-style: italic;"></div>
+        </div>
+
+        <p class="note">* Les prix varient selon l'heure, l'état de la route ou la météo.</p>
+        <button class="btn-share" onclick="partagerTarif()">🔗 Partager ce tarif (WhatsApp, etc.)</button>
+    </div>
+
     <div class="suggestion-box">
-        <h3>📢 Un trajet manquant ?</h3>
+        <h3 style="font-size: 16px; margin: 0 0 8px 0; color: #2c3e50;">📢 Un trajet manquant ou un prix différent ?</h3>
         <form action="https://formspree.io" method="POST">
-            <input type="text" name="trajet" placeholder="Ex: De Ndokoti vers Yassa" required>
-            <input type="text" name="prix_propose" placeholder="Ex: Moto 600 F, Taxi 300 F" required>
-            <textarea name="commentaire" placeholder="Remarques..." rows="2"></textarea>
-            <button type="submit" style="background:#34495e;">Envoyer ma suggestion</button>
+            <input type="text" name="trajet" placeholder="Ex: Yassa -> Bonabéri (Moto 600, Taxi 700)" required>
+            <button type="submit" style="background: #34495e; margin-top: 8px;">Envoyer ma suggestion</button>
         </form>
     </div>
 </div>
+
 <script>
-let listeQuartiers = ["Akwa","Bali","Bonabéri","Bonamoussadi","Bonanjo","Bonapriso","Campus Ange Raphaël (ESSEC)","Campus Ndogbong (IUT)","Campus PK 17 (Polytechnique)","Cité des Palmiers","Deido","Denver","Kotto","Logbaba","Logpom","New Bell","Ndogbong","Ndogpassi","Ndokoti","Nyalla","PK 14","PK 21","Yassa"];
-let tarifs = {
-    "yassa_akwa":{moto:600,taxi:500},"yassa_ndokoti":{moto:400,taxi:350},"yassa_bonanjo":{moto:700,taxi:600},"ndogpassi_ndokoti":{moto:300,taxi:250},"nyalla_ndokoti":{moto:250,taxi:200},"nyalla_akwa":{moto:500,taxi:400},
-    "ndokoti_campus ndogbong (iut)":{moto:200,taxi:200},"ndokoti_campus ange raphaël (essec)":{moto:250,taxi:200},"ndokoti_campus pk 17 (polytechnique)":{moto:450,taxi:350},"campus ndogbong (iut)_campus ange raphaël (essec)":{moto:250,taxi:200},
-    "campus ndogbong (iut)_campus pk 17 (polytechnique)":{moto:500,taxi:400},"ndokoti_akwa":{moto:400,taxi:300},"ndokoti_bonanjo":{moto:500,taxi:350},"ndokoti_deido":{moto:350,taxi:250},"ndokoti_logbaba":{moto:250,taxi:200},
-    "ndokoti_pk 14":{moto:350,taxi:300},"ndokoti_pk 21":{moto:600,taxi:450},"pk 14_campus pk 17 (polytechnique)":{moto:200,taxi:150},"bonamoussadi_akwa":{moto:500,taxi:300},"bonamoussadi_ndokoti":{moto:400,taxi:300},"bonamoussadi_deido":{moto:300,taxi:250},
-    "logpom_ndokoti":{moto:350,taxi:250},"kotto_akwa":{moto:600,taxi:350},"cite des palmiers_ndokoti":{moto:250,taxi:200},"cite des palmiers_akwa":{moto:500,taxi:350},"bonanjo_bonapriso":{moto:250,taxi:200},"bonanjo_bali":{moto:200,taxi:150},
-    "akwa_bonanjo":{moto:250,taxi:200},"new bell_akwa":{moto:300,taxi:200},"new bell_ndokoti":{moto:400,taxi:300},"bonabéri_akwa":{moto:400,taxi:300},"bonabéri_deido":{moto:300,taxi:250},"bonabéri_bonanjo":{moto:500,taxi:350},
-    "bali_ndokoti":{moto:500,taxi:350},"new bell_bonapriso":{moto:300,taxi:250},"yassa_ndogpassi":{moto:200,taxi:150}
-};
+const urlSheetDB = "https://sheetdb.io";
+let listeQuartiers = [];
+let tarifs = {};
+let grapheReseau = {};
 let textePartageGlobal = "";
 
-// Votre lien d'API SheetDB sécurisé actif
-const urlSheetDB = "https://sheetdb.io/api/v1/zgrhigxn3ri2m";
+function normaliser(texte) {
+    return texte.toString().trim().toLowerCase();
+}
 
 async function chargerDonneesSheets() {
     try {
         const response = await fetch(urlSheetDB);
         const donnees = await response.json();
-        
-        let setQ = new Set(listeQuartiers);
+        let mapNomsPropres = new Map();
+
         donnees.forEach(row => {
             let d = (row.Depart || row.depart || "").toString().trim();
             let a = (row.Arrivee || row.arrivee || "").toString().trim();
-            let m = (row.Moto || row.moto || "").toString().trim();
-            let t = (row.Taxi || row.taxi || "").toString().trim();
+            let m = parseInt((row.Moto || row.moto || "0").toString().replace(/\D/g, ""), 10);
+            let t = parseInt((row.Taxi || row.taxi || "0").toString().replace(/\D/g, ""), 10);
 
-            if (d && a) {
-                setQ.add(d); setQ.add(a);
-                tarifs[d.toLowerCase() + "_" + a.toLowerCase()] = { moto: m, taxi: t };
-                tarifs[a.toLowerCase() + "_" + d.toLowerCase()] = { moto: m, taxi: t };
+            if (d && a && m > 0) {
+                let dKey = normaliser(d);
+                let aKey = normaliser(a);
+
+                if (!mapNomsPropres.has(dKey)) mapNomsPropres.set(dKey, d);
+                if (!mapNomsPropres.has(aKey)) mapNomsPropres.set(aKey, a);
+
+                tarifs[dKey + "_" + aKey] = { moto: m, taxi: t || m };
+                tarifs[aKey + "_" + dKey] = { moto: m, taxi: t || m };
+
+                if (!grapheReseau[dKey]) grapheReseau[dKey] = [];
+                if (!grapheReseau[aKey]) grapheReseau[aKey] = [];
+                grapheReseau[dKey].push({ voisin: aKey, coutMoto: m });
+                grapheReseau[aKey].push({ voisin: dKey, coutMoto: m });
             }
         });
-        listeQuartiers = Array.from(setQ).sort();
-        document.getElementById("statutChargement").innerText = "🟢 Tunnel SheetDB connecté en direct !";
+
+        listeQuartiers = Array.from(mapNomsPropres.values()).sort((a, b) => a.localeCompare(b, 'fr'));
+        document.getElementById("statutChargement").innerText = "🟢 Tunnel SheetDB connecté (" + listeQuartiers.length + " lieux actifs)";
         document.getElementById("statutChargement").style.color = "#2ecc71";
     } catch (e) {
-        document.getElementById("statutChargement").innerText = "🟢 Base hybride active (30 trajets fonctionnels)";
-        document.getElementById("statutChargement").style.color = "#2ecc71";
+        document.getElementById("statutChargement").innerText = "🔴 Erreur de connexion à la base de données.";
+        document.getElementById("statutChargement").style.color = "#e74c3c";
     }
 }
+function estimerTrajetAlgorithme(departKey, arriveeKey) {
+    if (!grapheReseau[departKey] || !grapheReseau[arriveeKey]) return null;
+
+    let distances = {};
+    let escales = {};
+    let precedents = {};
+    let nonVisites = new Set(Object.keys(grapheReseau));
+
+    nonVisites.forEach(noeud => {
+        distances[noeud] = Infinity;
+        escales[noeud] = 0;
+    });
+    distances[departKey] = 0;
+
+    while (nonVisites.size > 0) {
+        let noeudActuel = null;
+        nonVisites.forEach(noeud => {
+            if (noeudActuel === null || distances[noeud] < distances[noeudActuel]) {
+                noeudActuel = noeud;
+            }
+        });
+
+        if (noeudActuel === null || distances[noeudActuel] === Infinity) break;
+        if (noeudActuel === arriveeKey) break;
+
+        nonVisites.delete(noeudActuel);
+
+        grapheReseau[noeudActuel].forEach(arrete => {
+            if (nonVisites.has(arrete.voisin)) {
+                let facteurEscale = (escales[noeudActuel] >= 1) ? 0.80 : 1.0;
+                let nouveauCout = distances[noeudActuel] + (arrete.coutMoto * facteurEscale);
+
+                if (nouveauCout < distances[arrete.voisin]) {
+                    distances[arrete.voisin] = nouveauCout;
+                    escales[arrete.voisin] = escales[noeudActuel] + 1;
+                    precedents[arrete.voisin] = noeudActuel;
+                }
+            }
+        });
+    }
+
+    if (distances[arriveeKey] === Infinity) return null;
+
+    let estMoto = Math.max(150, Math.round(distances[arriveeKey] / 50) * 50);
+    let estTaxi = 0;
+
+    if (estMoto <= 300) {
+        estTaxi = Math.max(200, estMoto);
+    } else if (estMoto > 300 && estMoto <= 400) {
+        estTaxi = estMoto - 50;
+    } else {
+        estTaxi = estMoto + 50;
+    }
+
+    let chemin = [];
+    let courant = arriveeKey;
+    while (courant) {
+        let nomPropre = listeQuartiers.find(q => normaliser(q) === courant) || courant;
+        chemin.unshift(nomPropre);
+        courant = precedents[courant];
+    }
+
+    return {
+        moto: estMoto,
+        taxi: estTaxi,
+        nbTroncons: escales[arriveeKey],
+        cheminTexte: chemin.join(" ➔ ")
+    };
+}
+
 function filtrerQuartiers(type) {
-    const input = document.getElementById("search" + type); const box = document.getElementById("options" + type); const texte = input.value.toLowerCase().trim(); box.innerHTML = ""; if (!texte) { box.style.display = "none"; return; }
-    const correspondances = listeQuartiers.filter(q => q.toLowerCase().includes(texte));
+    const input = document.getElementById("search" + type);
+    const box = document.getElementById("options" + type);
+    const texte = normaliser(input.value);
+    box.innerHTML = "";
+    if (!texte) { box.style.display = "none"; return; }
+
+    const correspondances = listeQuartiers.filter(q => normaliser(q).includes(texte));
     if (correspondances.length > 0) {
         box.style.display = "block";
         correspondances.forEach(q => {
-            const div = document.createElement("div"); div.innerText = q; div.onclick = function() { input.value = q; box.style.display = "none"; }; box.appendChild(div);
+            const div = document.createElement("div");
+            div.innerText = q;
+            div.onclick = function() { input.value = q; box.style.display = "none"; };
+            box.appendChild(div);
         });
-    } else { box.style.display = "none"; }
+    } else {
+        box.style.display = "none";
+    }
 }
+
 document.addEventListener("click", function(e) {
-    if (e.target && e.target.id && !e.target.id.startsWith("search")) { document.getElementById("optionsDepart").style.display = "none"; document.getElementById("optionsArrivee").style.display = "none"; }
+    if (e.target && e.target.id && !e.target.id.startsWith("search")) {
+        document.getElementById("optionsDepart").style.display = "none";
+        document.getElementById("optionsArrivee").style.display = "none";
+    }
 });
+
 function calculerPrix() {
-    const d = document.getElementById("searchDepart").value.trim(); const a = document.getElementById("searchArrivee").value.trim();
-    if (!d || !a || d.toLowerCase() === a.toLowerCase()) { alert("Sélectionnez deux quartiers différents."); return; }
-    const trajet = tarifs[(d + "_" + a).toLowerCase()] || tarifs[(a + "_" + d).toLowerCase()];
-    if (trajet) {
-        document.getElementById("prixMoto").innerText = "🏍️ Moto : " + trajet.moto + " FCFA"; document.getElementById("prixTaxi").innerText = "🚖 Taxi : " + trajet.taxi + " FCFA"; document.getElementById("resultatBox").style.display = "block";
-        textePartageGlobal = "Tarif TransPrix Douala (" + d + " ➡️ " + a + ") :\n🏍️ Moto : " + trajet.moto + " F\n🚖 Taxi : " + trajet.taxi + " F.\n\nSimule ici : https://github.io";
-    } else { alert("Ce trajet n'est pas encore répertorié."); }
+    const d = document.getElementById("searchDepart").value.trim();
+    const a = document.getElementById("searchArrivee").value.trim();
+    const dKey = normaliser(d);
+    const aKey = normaliser(a);
+
+    if (!d || !a || dKey === aKey) {
+        alert("Veuillez sélectionner deux quartiers différents.");
+        return;
+    }
+
+    const trajetOfficiel = tarifs[dKey + "_" + aKey] || tarifs[aKey + "_" + dKey];
+    const trajetEstime = estimerTrajetAlgorithme(dKey, aKey);
+
+    if (!trajetOfficiel && !trajetEstime) {
+        alert("L'un de ces lieux n'est pas encore présent dans notre base de données.");
+        return;
+    }
+
+    const blocOfficiel = document.getElementById("blocOfficiel");
+    const blocEstime = document.getElementById("blocEstime");
+    let resumePartage = "Tarif TransPrix Douala (" + d + " ➡️ " + a + ") :\n";
+
+    if (trajetOfficiel) {
+        blocOfficiel.style.display = "block";
+        document.getElementById("prixMotoOfficiel").innerText = "🏍️ Moto : " + trajetOfficiel.moto + " FCFA";
+        document.getElementById("prixTaxiOfficiel").innerText = "🚖 Taxi : " + trajetOfficiel.taxi + " FCFA";
+        resumePartage += "✅ Officiel : Moto " + trajetOfficiel.moto + " F | Taxi " + trajetOfficiel.taxi + " F\n";
+    } else {
+        blocOfficiel.style.display = "none";
+    }
+
+    if (trajetEstime) {
+        blocEstime.style.display = "block";
+        document.getElementById("prixMotoEstime").innerText = "🏍️ Moto : ~" + trajetEstime.moto + " FCFA";
+        document.getElementById("prixTaxiEstime").innerText = "🚖 Taxi : ~" + trajetEstime.taxi + " FCFA";
+        document.getElementById("detailEscale").innerText = (trajetEstime.nbTroncons > 1)
+            ? "Via correspondance : " + trajetEstime.cheminTexte
+            : "Calcul basé sur le réseau direct.";
+        resumePartage += "🧮 Estimé : Moto ~" + trajetEstime.moto + " F | Taxi ~" + trajetEstime.taxi + " F\n";
+    } else {
+        blocEstime.style.display = "none";
+    }
+
+    document.getElementById("resultatBox").style.display = "block";
+    textePartageGlobal = resumePartage + "\nSimule ton trajet ici : https://github.io";
 }
-function partagerTarif() { if (navigator.share) { navigator.share({ title: 'TransPrix', text: textePartageGlobal }); } else { alert("Partage non supporté."); } }
+
+function partagerTarif() {
+    if (navigator.share) {
+        navigator.share({ title: 'TransPrix Douala', text: textePartageGlobal });
+    } else {
+        navigator.clipboard.writeText(textePartageGlobal);
+        alert("Tarif copié dans le presse-papiers !");
+    }
+}
+
 let deferredPrompt;
-window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; document.getElementById('btnPWAInstall').style.display = 'block'; });
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    document.getElementById('btnPWAInstall').style.display = 'block';
+});
 document.getElementById('btnPWAInstall').addEventListener('click', async () => {
     if (deferredPrompt) {
-        deferredPrompt.prompt(); const { outcome } = await deferredPrompt.userChoice;
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
         if (outcome === 'accepted') document.getElementById('btnPWAInstall').style.display = 'none';
         deferredPrompt = null;
     }
 });
-if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('/transprix-douala/sw.js'); }); }
+
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/transprix-douala/sw.js');
+    });
+}
+
 chargerDonneesSheets();
 </script>
 </body>
