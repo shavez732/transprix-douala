@@ -38,7 +38,7 @@
 <div class="container">
     <h1>🇨🇲 TransPrix Douala</h1>
     <p class="subtitle">Trouvez le juste prix pour votre trajet</p>
-    <div id="statutChargement">🔄 Connexion sécurisée au tunnel SheetDB...</div>
+    <div id="statutChargement">🔄 Connexion à la base Google Sheets...</div>
 
     <button id="btnPWAInstall" class="btn-pwa">📲 Installer l'application sur mon écran</button>
 
@@ -84,7 +84,7 @@
 </div>
 
 <script>
-const urlSheetDB = "https://sheetdb.io";
+const urlGoogleCSV = "https://google.com";
 let listeQuartiers = [];
 let tarifs = {};
 let grapheReseau = {};
@@ -96,15 +96,24 @@ function normaliser(texte) {
 
 async function chargerDonneesSheets() {
     try {
-        const response = await fetch(urlSheetDB);
-        const donnees = await response.json();
+        const response = await fetch(urlGoogleCSV);
+        if (!response.ok) throw new Error("Erreur réseau");
+        
+        const texteCSV = await response.text();
+        const lignes = texteCSV.split(/\r?\n/);
         let mapNomsPropres = new Map();
 
-        donnees.forEach(row => {
-            let d = (row.Depart || row.depart || "").toString().trim();
-            let a = (row.Arrivee || row.arrivee || "").toString().trim();
-            let m = parseInt((row.Moto || row.moto || "0").toString().replace(/\D/g, ""), 10);
-            let t = parseInt((row.Taxi || row.taxi || "0").toString().replace(/\D/g, ""), 10);
+        for (let i = 1; i < lignes.length; i++) {
+            const ligne = lignes[i].trim();
+            if (!ligne) continue;
+
+            const colonnes = ligne.split(",");
+            if (colonnes.length < 4) continue;
+
+            let d = colonnes[0].replace(/^"|"$/g, "").trim();
+            let a = colonnes[1].replace(/^"|"$/g, "").trim();
+            let m = parseInt(colonnes[2].replace(/\D/g, ""), 10);
+            let t = parseInt(colonnes[3].replace(/\D/g, ""), 10);
 
             if (d && a && m > 0) {
                 let dKey = normaliser(d);
@@ -121,13 +130,13 @@ async function chargerDonneesSheets() {
                 grapheReseau[dKey].push({ voisin: aKey, coutMoto: m });
                 grapheReseau[aKey].push({ voisin: dKey, coutMoto: m });
             }
-        });
+        }
 
         listeQuartiers = Array.from(mapNomsPropres.values()).sort((a, b) => a.localeCompare(b, 'fr'));
-        document.getElementById("statutChargement").innerText = "🟢 Tunnel SheetDB connecté (" + listeQuartiers.length + " lieux actifs)";
+        document.getElementById("statutChargement").innerText = "🟢 Base Google Sheets connectée (" + listeQuartiers.length + " lieux actifs)";
         document.getElementById("statutChargement").style.color = "#2ecc71";
     } catch (e) {
-        document.getElementById("statutChargement").innerText = "🔴 Erreur de connexion à la base de données.";
+        document.getElementById("statutChargement").innerText = "🔴 Erreur de chargement de la base Google Sheets.";
         document.getElementById("statutChargement").style.color = "#e74c3c";
     }
 }
