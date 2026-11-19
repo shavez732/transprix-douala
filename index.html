@@ -56,7 +56,7 @@
             <div id="prixTaxiOfficiel" class="price-line">🚖 Taxi : -- FCFA</div>
         </div>
         <div id="blocEstime" class="card-tarif card-estime" style="display: none;">
-            <div class="card-title" style="color: #d68910;">🗺️ Tarif Estimé (Itinéraire le plus court)</div>
+            <div class="card-title" style="color: #d68910;">🗺️ Tarif Estimé (Axe principal le plus court)</div>
             <div id="prixMotoEstime" class="price-line">🏍️ Moto : -- FCFA</div>
             <div id="prixTaxiEstime" class="price-line">🚖 Taxi : -- FCFA</div>
             <div id="detailEscale" class="note" style="font-style: italic;"></div>
@@ -76,7 +76,7 @@
 const urlGoogleCSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSq9OEZUP1AT0zs08bc4G3Z4gmirf0g8tRq0WztCRCXsOfMf_tZTZI9qupwPm-8sPMDvGvHnTzGjaCo/pub?output=csv";
 
 const carteDouala = {
-    "total nkolbong (yassa)": { lat: 4.0005, lon: 9.8115, axe: true },
+    "total nkolbong (yassa)": { lat: 3.9980, lon: 9.8160, axe: true },
     "carrefour yassa": { lat: 4.0042, lon: 9.7985, axe: true },
     "yassa": { lat: 4.0042, lon: 9.7985, axe: true },
     "carrefour ari (yassa)": { lat: 4.0055, lon: 9.7940, axe: true },
@@ -148,9 +148,9 @@ const carteDouala = {
 let listeQuartiers = [], tarifs = {}, grapheReseau = {}, mapNomsPropres = new Map(), textePartageGlobal = "";
 const normaliser = (t) => t.toString().trim().toLowerCase();
 
-function calculerDistanceKm(k1, k2) {
+function calculerDistanceRoutiereKm(k1, k2) {
     const p1 = carteDouala[k1], p2 = carteDouala[k2];
-    if (!p1 || !p2) return 5.0;
+    if (!p1 || !p2) return 6.0;
     const R = 6371;
     const dLat = (p2.lat - p1.lat) * Math.PI / 180;
     const dLon = (p2.lon - p1.lon) * Math.PI / 180;
@@ -158,7 +158,7 @@ function calculerDistanceKm(k1, k2) {
               Math.cos(p1.lat * Math.PI / 180) * Math.cos(p2.lat * Math.PI / 180) *
               Math.sin(dLon / 2) * Math.sin(dLon / 2);
     const distVolOiseau = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return Math.max(1.0, distVolOiseau * 1.28);
+    return Math.max(1.0, distVolOiseau * 1.48); // Calibré : Nkolbong->Ndokoti = ~12 km, Nkolbong->PK14 = ~14 km
 }
 
 function enregistrerTrajet(d, a, m, t) {
@@ -168,15 +168,13 @@ function enregistrerTrajet(d, a, m, t) {
     if (!mapNomsPropres.has(aKey)) mapNomsPropres.set(aKey, a);
     tarifs[dKey + "_" + aKey] = tarifs[aKey + "_" + dKey] = { moto: m, taxi: (!isNaN(t) && t > 0) ? t : m };
 
-    let distKm = calculerDistanceKm(dKey, aKey);
-    let bonusAxeD = (carteDouala[dKey] && carteDouala[dKey].axe) ? 0.92 : 1.0;
-    let bonusAxeA = (carteDouala[aKey] && carteDouala[aKey].axe) ? 0.92 : 1.0;
-    let poidsRoutier = distKm * bonusAxeD * bonusAxeA;
+    let distKm = calculerDistanceRoutiereKm(dKey, aKey);
+    let bonusAxe = (carteDouala[dKey]?.axe && carteDouala[aKey]?.axe) ? 0.85 : 1.0;
 
     if (!grapheReseau[dKey]) grapheReseau[dKey] = [];
     if (!grapheReseau[aKey]) grapheReseau[aKey] = [];
-    grapheReseau[dKey].push({ voisin: aKey, distKm: distKm, poids: poidsRoutier });
-    grapheReseau[aKey].push({ voisin: dKey, distKm: distKm, poids: poidsRoutier });
+    grapheReseau[dKey].push({ voisin: aKey, distKm: distKm, poids: distKm * bonusAxe });
+    grapheReseau[aKey].push({ voisin: dKey, distKm: distKm, poids: distKm * bonusAxe });
 }
 
 async function chargerDonneesSheets() {
@@ -198,9 +196,9 @@ async function chargerDonneesSheets() {
         const cles = Array.from(mapNomsPropres.keys());
         for (let i = 0; i < cles.length; i++) {
             for (let j = i + 1; j < cles.length; j++) {
-                let dKm = calculerDistanceKm(cles.at(i), cles.at(j));
-                if (dKm <= 3.5 && carteDouala[cles.at(i)] && carteDouala[cles.at(j)]) {
-                    let p = dKm * (carteDouala[cles.at(i)].axe && carteDouala[cles.at(j)].axe ? 0.85 : 1.0);
+                let dKm = calculerDistanceRoutiereKm(cles.at(i), cles.at(j));
+                if (dKm <= 4.5 && carteDouala[cles.at(i)] && carteDouala[cles.at(j)]) {
+                    let p = dKm * (carteDouala[cles.at(i)].axe && carteDouala[cles.at(j)].axe ? 0.82 : 1.0);
                     grapheReseau[cles.at(i)].push({ voisin: cles.at(j), distKm: dKm, poids: p });
                     grapheReseau[cles.at(j)].push({ voisin: cles.at(i), distKm: dKm, poids: p });
                 }
@@ -241,21 +239,22 @@ function estimerTrajetPlusCourt(departKey, arriveeKey) {
 
     if (distReelle[arriveeKey] === Infinity) return null;
 
-    let kmDirect = calculerDistanceKm(departKey, arriveeKey);
-    let kmFinal = Math.min(distReelle[arriveeKey], kmDirect * 1.12);
+    let kmDirect = calculerDistanceRoutiereKm(departKey, arriveeKey);
+    let kmFinal = Math.min(distReelle[arriveeKey], kmDirect * 1.08);
 
+    // Barème étalonné sur vos repères : 11-15.8 km = 400 F moto / 300-350 F taxi ; >16 km = taxi +50/100 F
     let estMoto = 150, estTaxi = 200;
-    if (kmFinal <= 3) {
+    if (kmFinal <= 2.5) {
         estMoto = 150; estTaxi = 200;
-    } else if (kmFinal <= 6) {
+    } else if (kmFinal <= 5.5) {
         estMoto = 250; estTaxi = 250;
     } else if (kmFinal <= 10.5) {
         estMoto = 350; estTaxi = 300;
     } else if (kmFinal <= 15.8) {
         estMoto = 400; estTaxi = 350;
-    } else if (kmFinal <= 19) {
+    } else if (kmFinal <= 19.0) {
         estMoto = 500; estTaxi = 550;
-    } else if (kmFinal <= 23) {
+    } else if (kmFinal <= 23.0) {
         estMoto = 600; estTaxi = 650;
     } else {
         estMoto = 700; estTaxi = 750;
