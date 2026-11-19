@@ -85,13 +85,45 @@
 
 <script>
 const urlGoogleCSV = "https://google.com";
+
+// Base de secours intégrée en cas de mode hors-ligne
+const baseSecours = [
+    { d: "Yassa", a: "Akwa", m: 600, t: 500 },
+    { d: "Ndokoti", a: "Campus Ndogbong", m: 200, t: 200 },
+    { d: "Bonabéri", a: "Akwa", m: 400, t: 300 },
+    { d: "Yassa", a: "Ndokoti", m: 400, t: 350 },
+    { d: "Bali", a: "Ndokoti", m: 500, t: 350 },
+    { d: "New Bell", a: "Bonapriso", m: 300, t: 250 },
+    { d: "Yassa", a: "Ndogpassi", m: 200, t: 150 },
+    { d: "Denver", a: "Bonamoussadi", m: 200, t: 200 },
+    { d: "Deido", a: "Logpom", m: 300, t: 200 }
+];
+
 let listeQuartiers = [];
 let tarifs = {};
 let grapheReseau = {};
+let mapNomsPropres = new Map();
 let textePartageGlobal = "";
 
 function normaliser(texte) {
     return texte.toString().trim().toLowerCase();
+}
+
+function enregistrerTrajet(d, a, m, t) {
+    if (!d || !a || m <= 0) return;
+    let dKey = normaliser(d);
+    let aKey = normaliser(a);
+
+    if (!mapNomsPropres.has(dKey)) mapNomsPropres.set(dKey, d);
+    if (!mapNomsPropres.has(aKey)) mapNomsPropres.set(aKey, a);
+
+    tarifs[dKey + "_" + aKey] = { moto: m, taxi: t || m };
+    tarifs[aKey + "_" + dKey] = { moto: m, taxi: t || m };
+
+    if (!grapheReseau[dKey]) grapheReseau[dKey] = [];
+    if (!grapheReseau[aKey]) grapheReseau[aKey] = [];
+    grapheReseau[dKey].push({ voisin: aKey, coutMoto: m });
+    grapheReseau[aKey].push({ voisin: dKey, coutMoto: m });
 }
 
 async function chargerDonneesSheets() {
@@ -101,43 +133,30 @@ async function chargerDonneesSheets() {
         
         const texteCSV = await response.text();
         const lignes = texteCSV.split(/\r?\n/);
-        let mapNomsPropres = new Map();
 
         for (let i = 1; i < lignes.length; i++) {
             const ligne = lignes[i].trim();
             if (!ligne) continue;
 
-            const colonnes = ligne.split(",");
-            if (colonnes.length < 4) continue;
+            const cols = ligne.split(",");
+            if (cols.length < 4) continue;
 
-            let d = colonnes[0].replace(/^"|"$/g, "").trim();
-            let a = colonnes[1].replace(/^"|"$/g, "").trim();
-            let m = parseInt(colonnes[2].replace(/\D/g, ""), 10);
-            let t = parseInt(colonnes[3].replace(/\D/g, ""), 10);
+            let d = cols[0].replace(/^"|"$/g, "").trim();
+            let a = cols[1].replace(/^"|"$/g, "").trim();
+            let m = parseInt(cols[2].replace(/\D/g, ""), 10);
+            let t = parseInt(cols[3].replace(/\D/g, ""), 10);
 
-            if (d && a && m > 0) {
-                let dKey = normaliser(d);
-                let aKey = normaliser(a);
-
-                if (!mapNomsPropres.has(dKey)) mapNomsPropres.set(dKey, d);
-                if (!mapNomsPropres.has(aKey)) mapNomsPropres.set(aKey, a);
-
-                tarifs[dKey + "_" + aKey] = { moto: m, taxi: t || m };
-                tarifs[aKey + "_" + dKey] = { moto: m, taxi: t || m };
-
-                if (!grapheReseau[dKey]) grapheReseau[dKey] = [];
-                if (!grapheReseau[aKey]) grapheReseau[aKey] = [];
-                grapheReseau[dKey].push({ voisin: aKey, coutMoto: m });
-                grapheReseau[aKey].push({ voisin: dKey, coutMoto: m });
-            }
+            enregistrerTrajet(d, a, m, t);
         }
 
         listeQuartiers = Array.from(mapNomsPropres.values()).sort((a, b) => a.localeCompare(b, 'fr'));
         document.getElementById("statutChargement").innerText = "🟢 Base Google Sheets connectée (" + listeQuartiers.length + " lieux actifs)";
         document.getElementById("statutChargement").style.color = "#2ecc71";
     } catch (e) {
-        document.getElementById("statutChargement").innerText = "🔴 Erreur de chargement de la base Google Sheets.";
-        document.getElementById("statutChargement").style.color = "#e74c3c";
+        baseSecours.forEach(item => enregistrerTrajet(item.d, item.a, item.m, item.t));
+        listeQuartiers = Array.from(mapNomsPropres.values()).sort((a, b) => a.localeCompare(b, 'fr'));
+        document.getElementById("statutChargement").innerText = "🟠 Mode hors-ligne actif (" + listeQuartiers.length + " lieux de secours)";
+        document.getElementById("statutChargement").style.color = "#e67e22";
     }
 }
 function estimerTrajetAlgorithme(departKey, arriveeKey) {
@@ -197,7 +216,7 @@ function estimerTrajetAlgorithme(departKey, arriveeKey) {
     let chemin = [];
     let courant = arriveeKey;
     while (courant) {
-        let nomPropre = listeQuartiers.find(q => normaliser(q) === courant) || courant;
+        let nomPropre = mapNomsPropres.get(courant) || courant;
         chemin.unshift(nomPropre);
         courant = precedents[courant];
     }
@@ -245,7 +264,7 @@ function calculerPrix() {
     const aKey = normaliser(a);
 
     if (!d || !a || dKey === aKey) {
-        alert("Veuillez sélectionner deux quartiers différents.");
+        alert("Sélectionnez deux quartiers différents.");
         return;
     }
 
@@ -253,7 +272,7 @@ function calculerPrix() {
     const trajetEstime = estimerTrajetAlgorithme(dKey, aKey);
 
     if (!trajetOfficiel && !trajetEstime) {
-        alert("L'un de ces lieux n'est pas encore présent dans notre base de données.");
+        alert("L'un de ces lieux n'est pas encore répertorié dans la base.");
         return;
     }
 
@@ -276,14 +295,14 @@ function calculerPrix() {
         document.getElementById("prixTaxiEstime").innerText = "🚖 Taxi : ~" + trajetEstime.taxi + " FCFA";
         document.getElementById("detailEscale").innerText = (trajetEstime.nbTroncons > 1)
             ? "Via correspondance : " + trajetEstime.cheminTexte
-            : "Calcul basé sur le réseau direct.";
+            : "Calcul basé sur la liaison directe.";
         resumePartage += "🧮 Estimé : Moto ~" + trajetEstime.moto + " F | Taxi ~" + trajetEstime.taxi + " F\n";
     } else {
         blocEstime.style.display = "none";
     }
 
     document.getElementById("resultatBox").style.display = "block";
-    textePartageGlobal = resumePartage + "\nSimule ton trajet ici : https://github.io";
+    textePartageGlobal = resumePartage + "\nSimule ici : https://github.io";
 }
 
 function partagerTarif() {
