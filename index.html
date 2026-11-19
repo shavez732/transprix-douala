@@ -84,7 +84,7 @@
 </div>
 
 <script>
-const urlGoogleCSV = "https://google.com";
+const urlGoogleCSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSq9OEZUP1AT0zs08bc4G3Z4gmirf0g8tRq0WztCRCXsOfMf_tZTZI9qupwPm-8sPMDvGvHnTzGjaCo/pub?output=csv";
 
 // Base de secours intégrée en cas de mode hors-ligne
 const baseSecours = [
@@ -108,6 +108,7 @@ let textePartageGlobal = "";
 function normaliser(texte) {
     return texte.toString().trim().toLowerCase();
 }
+
 function enregistrerTrajet(d, a, m, t) {
     if (!d || !a || m <= 0) return;
     let dKey = normaliser(d);
@@ -248,14 +249,12 @@ function filtrerQuartiers(type) {
         box.style.display = "none";
     }
 }
-
 document.addEventListener("click", function(e) {
     if (e.target && e.target.id && !e.target.id.startsWith("search")) {
         document.getElementById("optionsDepart").style.display = "none";
         document.getElementById("optionsArrivee").style.display = "none";
     }
 });
-
 function calculerPrix() {
     const d = document.getElementById("searchDepart").value.trim();
     const a = document.getElementById("searchArrivee").value.trim();
