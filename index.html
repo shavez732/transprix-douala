@@ -12,77 +12,8 @@
         p.subtitle { color: #7f8c8d; font-size: 14px; margin: 0 0 20px 0; text-align: center; }
         .search-container { position: relative; margin-top: 5px; }
         label { font-weight: bold; display: block; margin-top: 15px; font-size: 14px; color: #2c3e50; }
-        input, button, textarea { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 15px; }
-        input:focus, textarea:focus { border-color: #e67e22; outline: none; }
-        button { background: #e67e22; color: white; font-weight: bold; border: none; cursor: pointer; margin-top: 15px; transition: 0.2s; }
-        button:hover { background: #d35400; }
-        .options-list { position: absolute; width: 100%; max-height: 200px; overflow-y: auto; background: white; border: 1px solid #ddd; border-top: none; border-radius: 0 0 8px 8px; z-index: 1000; display: none; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .options-list div { padding: 10px 12px; cursor: pointer; border-bottom: 1px solid #f0f0f0; font-size: 14px; }
-        .options-list div:hover { background: #fef5e7; color: #e67e22; font-weight: bold; }
-        .result-box { display: none; margin-top: 20px; padding: 15px; background: #eafaf1; border-left: 5px solid #2ecc71; border-radius: 8px; }
-        .price-line { font-size: 18px; font-weight: bold; margin: 6px 0; color: #2c3e50; }
-        .note { font-size: 12px; color: #7f8c8d; margin-top: 8px; }
-        .btn-share { background: #27ae60; margin-top: 10px; }
-        .btn-share:hover { background: #219150; }
-        .btn-pwa { display: none; background: #2980b9; margin-bottom: 15px; }
-        .suggestion-box { margin-top: 25px; padding-top: 15px; border-top: 1px dashed #ccc; }
-        #statutChargement { text-align: center; font-size: 13px; margin-bottom: 10px; color: #e67e22; font-weight: bold; }
-    </style>
-</head>
-<body>
-
-<div class="container">
-    <h1>🇨🇲 TransPrix Douala</h1>
-    <p class="subtitle">Trouvez le juste prix pour votre trajet</p>
-    <div id="statutChargement">🔄 Connexion sécurisée au tunnel SheetDB...</div>
-
-    <button id="btnPWAInstall" class="btn-pwa">📲 Installer l'application sur mon écran</button>
-
-    <label for="searchDepart">📍 Lieu de Départ :</label>
-    <div class="search-container">
-        <input type="text" id="searchDepart" placeholder="Ex: Yassa, Akwa, Ndokoti..." oninput="filtrerQuartiers('Depart')" autocomplete="off">
-        <div id="optionsDepart" class="options-list"></div>
-    </div>
-
-    <label for="searchArrivee">🏁 Lieu d'Arrivée :</label>
-    <div class="search-container">
-        <input type="text" id="searchArrivee" placeholder="Ex: Deido, Bonamoussadi..." oninput="filtrerQuartiers('Arrivee')" autocomplete="off">
-        <div id="optionsArrivee" class="options-list"></div>
-    </div>
-
-    <button onclick="calculerPrix()">Afficher les Tarifs</button>
-
-    <div id="resultatBox" class="result-box">
-        <div id="prixMoto" class="price-line">🏍️ Moto : -- FCFA</div>
-        <div id="prixTaxi" class="price-line">🚖 Taxi : -- FCFA</div>
-        <p class="note">* Les prix varient selon l'heure, l'état de la route ou la météo.</p>
-        <button class="btn-share" onclick="partagerTarif()">🔗 Partager ce tarif (WhatsApp, etc.)</button>
-    </div>
-
-    <div class="suggestion-box">
-        <h3 style="font-size: 16px; margin: 0 0 8px 0; color: #2c3e50;">📢 Un trajet manquant ou un prix différent ?</h3>
-        <form action="https://formspree.io" method="POST">
-            <input type="text" name="trajet" placeholder="Ex: Yassa -> Bonabéri (Moto 600, Taxi 700)" required>
-            <button type="submit" style="background: #34495e; margin-top: 8px;">Envoyer ma suggestion</button>
-        </form>
-    </div>
-</div>
-
-<script>
-const urlSheetDB = "https://sheetdb.io";
-let listeQuartiers = ["Yassa", "Akwa", "Ndokoti", "Campus Ndogbong", "Bonabéri", "Bali", "New Bell", "Bonapriso", "Ndogpassi", "Denver", "Bonamoussadi", "Deido", "Logpom"];
-let tarifs = {
-    "yassa_akwa": { moto: "600", taxi: "500" },
-    "ndokoti_campus ndogbong": { moto: "200", taxi: "200" },
-    "bonabéri_akwa": { moto: "400", taxi: "300" },
-    "yassa_ndokoti": { moto: "400", taxi: "350" },
-    "bali_ndokoti": { moto: "500", taxi: "350" },
-    "new bell_bonapriso": { moto: "300", taxi: "250" },
-    "yassa_ndogpassi": { moto: "200", taxi: "150" },
-    "denver_bonamoussadi": { moto: "200", taxi: "200" },
-    "deido_logpom": { moto: "300", taxi: "200" }
-};
-let textePartageGlobal = "";
+        input, button, textarea { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #cc
+const urlSheetDB = "https://sheetdb.io/api/v1/zgrhigxn3ri2m";
 
 async function chargerDonneesSheets() {
     try {
@@ -110,65 +41,39 @@ async function chargerDonneesSheets() {
         document.getElementById("statutChargement").style.color = "#2ecc71";
     }
 }
-
 function filtrerQuartiers(type) {
-    const input = document.getElementById("search" + type);
-    const box = document.getElementById("options" + type);
-    const texte = input.value.toLowerCase().trim();
-    box.innerHTML = "";
-    if (!texte) { box.style.display = "none"; return; }
+    const input = document.getElementById("search" + type); const box = document.getElementById("options" + type); const texte = input.value.toLowerCase().trim(); box.innerHTML = ""; if (!texte) { box.style.display = "none"; return; }
     const correspondances = listeQuartiers.filter(q => q.toLowerCase().includes(texte));
     if (correspondances.length > 0) {
         box.style.display = "block";
         correspondances.forEach(q => {
-            const div = document.createElement("div");
-            div.innerText = q;
-            div.onclick = function() { input.value = q; box.style.display = "none"; };
-            box.appendChild(div);
+            const div = document.createElement("div"); div.innerText = q; div.onclick = function() { input.value = q; box.style.display = "none"; }; box.appendChild(div);
         });
     } else { box.style.display = "none"; }
 }
-
 document.addEventListener("click", function(e) {
-    if (e.target && e.target.id && !e.target.id.startsWith("search")) {
-        document.getElementById("optionsDepart").style.display = "none";
-        document.getElementById("optionsArrivee").style.display = "none";
-    }
+    if (e.target && e.target.id && !e.target.id.startsWith("search")) { document.getElementById("optionsDepart").style.display = "none"; document.getElementById("optionsArrivee").style.display = "none"; }
 });
-
 function calculerPrix() {
-    const d = document.getElementById("searchDepart").value.trim();
-    const a = document.getElementById("searchArrivee").value.trim();
+    const d = document.getElementById("searchDepart").value.trim(); const a = document.getElementById("searchArrivee").value.trim();
     if (!d || !a || d.toLowerCase() === a.toLowerCase()) { alert("Sélectionnez deux quartiers différents."); return; }
     const trajet = tarifs[(d + "_" + a).toLowerCase()] || tarifs[(a + "_" + d).toLowerCase()];
     if (trajet) {
-        document.getElementById("prixMoto").innerText = "🏍️ Moto : " + trajet.moto + " FCFA";
-        document.getElementById("prixTaxi").innerText = "🚖 Taxi : " + trajet.taxi + " FCFA";
-        document.getElementById("resultatBox").style.display = "block";
+        document.getElementById("prixMoto").innerText = "🏍️ Moto : " + trajet.moto + " FCFA"; document.getElementById("prixTaxi").innerText = "🚖 Taxi : " + trajet.taxi + " FCFA"; document.getElementById("resultatBox").style.display = "block";
         textePartageGlobal = "Tarif TransPrix Douala (" + d + " ➡️ " + a + ") :\n🏍️ Moto : " + trajet.moto + " F\n🚖 Taxi : " + trajet.taxi + " F.\n\nSimule ici : https://github.io";
     } else { alert("Ce trajet n'est pas encore répertorié."); }
 }
-
-function partagerTarif() {
-    if (navigator.share) { navigator.share({ title: 'TransPrix', text: textePartageGlobal }); }
-    else { alert("Partage non supporté."); }
-}
-
+function partagerTarif() { if (navigator.share) { navigator.share({ title: 'TransPrix', text: textePartageGlobal }); } else { alert("Partage non supporté."); } }
 let deferredPrompt;
 window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; document.getElementById('btnPWAInstall').style.display = 'block'; });
 document.getElementById('btnPWAInstall').addEventListener('click', async () => {
     if (deferredPrompt) {
-        deferredPrompt.prompt();
-        const { outcome } = await deferredPrompt.userChoice;
+        deferredPrompt.prompt(); const { outcome } = await deferredPrompt.userChoice;
         if (outcome === 'accepted') document.getElementById('btnPWAInstall').style.display = 'none';
         deferredPrompt = null;
     }
 });
-
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => { navigator.serviceWorker.register('/transprix-douala/sw.js'); });
-}
-
+if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('/transprix-douala/sw.js'); }); }
 chargerDonneesSheets();
 </script>
 </body>
