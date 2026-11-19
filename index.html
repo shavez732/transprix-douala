@@ -38,21 +38,17 @@
     <p class="subtitle">Trouvez le juste prix pour votre trajet</p>
     <div id="statutChargement">🔄 Connexion à la base Google Sheets...</div>
     <button id="btnPWAInstall" class="btn-pwa">📲 Installer l'application sur mon écran</button>
-
     <label for="searchDepart">📍 Lieu de Départ :</label>
     <div class="search-container">
         <input type="text" id="searchDepart" placeholder="Ex: Total Nkolbong, Akwa, Ndokoti..." oninput="filtrerQuartiers('Depart')" autocomplete="off">
         <div id="optionsDepart" class="options-list"></div>
     </div>
-
     <label for="searchArrivee">🏁 Lieu d'Arrivée :</label>
     <div class="search-container">
         <input type="text" id="searchArrivee" placeholder="Ex: PK14, Bonamoussadi, Deido..." oninput="filtrerQuartiers('Arrivee')" autocomplete="off">
         <div id="optionsArrivee" class="options-list"></div>
     </div>
-
     <button onclick="calculerPrix()">Afficher les Tarifs</button>
-
     <div id="resultatBox" class="result-box">
         <div id="blocOfficiel" class="card-tarif card-officiel" style="display: none;">
             <div class="card-title" style="color: #27ae60;">✅ Tarif Officiel (Base de données)</div>
@@ -60,7 +56,7 @@
             <div id="prixTaxiOfficiel" class="price-line">🚖 Taxi : -- FCFA</div>
         </div>
         <div id="blocEstime" class="card-tarif card-estime" style="display: none;">
-            <div class="card-title" style="color: #d68910;">🧮 Tarif Estimé (Algorithme réseau)</div>
+            <div class="card-title" style="color: #d68910;">🗺️ Tarif Estimé (Itinéraire le plus court)</div>
             <div id="prixMotoEstime" class="price-line">🏍️ Moto : -- FCFA</div>
             <div id="prixTaxiEstime" class="price-line">🚖 Taxi : -- FCFA</div>
             <div id="detailEscale" class="note" style="font-style: italic;"></div>
@@ -68,7 +64,6 @@
         <p class="note">* Les prix varient selon l'heure, l'état de la route ou la météo.</p>
         <button class="btn-share" onclick="partagerTarif()">🔗 Partager ce tarif (WhatsApp, etc.)</button>
     </div>
-
     <div class="suggestion-box">
         <h3 style="font-size: 16px; margin: 0 0 8px 0; color: #2c3e50;">📢 Un trajet manquant ou un prix différent ?</h3>
         <form action="https://formspree.io" method="POST">
@@ -77,18 +72,94 @@
         </form>
     </div>
 </div>
-
 <script>
 const urlGoogleCSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSq9OEZUP1AT0zs08bc4G3Z4gmirf0g8tRq0WztCRCXsOfMf_tZTZI9qupwPm-8sPMDvGvHnTzGjaCo/pub?output=csv";
-const baseSecours = [
-    { d: "Yassa", a: "Akwa", m: 600, t: 500 }, { d: "Ndokoti", a: "Campus Ndogbong", m: 200, t: 200 },
-    { d: "Bonabéri", a: "Akwa", m: 400, t: 300 }, { d: "Yassa", a: "Ndokoti", m: 400, t: 350 },
-    { d: "Bali", a: "Ndokoti", m: 500, t: 350 }, { d: "New Bell", a: "Bonapriso", m: 300, t: 250 },
-    { d: "Yassa", a: "Ndogpassi", m: 200, t: 150 }, { d: "Denver", a: "Bonamoussadi", m: 200, t: 200 },
-    { d: "Deido", a: "Logpom", m: 300, t: 200 }
-];
+
+const carteDouala = {
+    "total nkolbong (yassa)": { lat: 4.0005, lon: 9.8115, axe: true },
+    "carrefour yassa": { lat: 4.0042, lon: 9.7985, axe: true },
+    "yassa": { lat: 4.0042, lon: 9.7985, axe: true },
+    "carrefour ari (yassa)": { lat: 4.0055, lon: 9.7940, axe: true },
+    "stade de japoma": { lat: 4.0010, lon: 9.8250, axe: false },
+    "carrefour nyalla": { lat: 4.0180, lon: 9.7720, axe: true },
+    "nyalla château": { lat: 4.0220, lon: 9.7760, axe: false },
+    "elf village": { lat: 4.0260, lon: 9.7580, axe: true },
+    "marché de village": { lat: 4.0290, lon: 9.7540, axe: false },
+    "ndogpassi": { lat: 4.0150, lon: 9.7600, axe: false },
+    "carrefour logbaba": { lat: 4.0360, lon: 9.7490, axe: true },
+    "hôpital de district de logbaba": { lat: 4.0380, lon: 9.7520, axe: false },
+    "ccc bassa": { lat: 4.0410, lon: 9.7420, axe: true },
+    "carrefour ndokoti": { lat: 4.0465, lon: 9.7365, axe: true },
+    "ndokoti": { lat: 4.0465, lon: 9.7365, axe: true },
+    "tunnel ndokoti": { lat: 4.0480, lon: 9.7350, axe: true },
+    "ange raphaël (campus 1)": { lat: 4.0530, lon: 9.7330, axe: true },
+    "essec douala": { lat: 4.0560, lon: 9.7350, axe: false },
+    "campus ndogbong": { lat: 4.0580, lon: 9.7420, axe: false },
+    "cité des palmiers": { lat: 4.0570, lon: 9.7540, axe: true },
+    "bepanda omnisports": { lat: 4.0590, lon: 9.7260, axe: true },
+    "bepanda double balle": { lat: 4.0630, lon: 9.7290, axe: false },
+    "carrefour nylon": { lat: 4.0350, lon: 9.7250, axe: false },
+    "marché dakar": { lat: 4.0380, lon: 9.7320, axe: false },
+    "carrefour pk8": { lat: 4.0540, lon: 9.7580, axe: true },
+    "carrefour pk10": { lat: 4.0610, lon: 9.7690, axe: true },
+    "génie militaire (pk11)": { lat: 4.0650, lon: 9.7760, axe: true },
+    "carrefour pk12": { lat: 4.0680, lon: 9.7820, axe: true },
+    "base hysacam (pk12)": { lat: 4.0660, lon: 9.7850, axe: false },
+    "carrefour pk14": { lat: 4.0760, lon: 9.7940, axe: true },
+    "pk17 (campus 3 / iut)": { lat: 4.0920, lon: 9.8110, axe: true },
+    "carrefour logbessou": { lat: 4.0840, lon: 9.7820, axe: true },
+    "iug logbessou": { lat: 4.0880, lon: 9.7850, axe: false },
+    "rond-point makepe": { lat: 4.0730, lon: 9.7420, axe: true },
+    "parcours vita": { lat: 4.0790, lon: 9.7450, axe: false },
+    "rond-point bonamoussadi": { lat: 4.0870, lon: 9.7360, axe: true },
+    "bonamoussadi": { lat: 4.0870, lon: 9.7360, axe: true },
+    "bonamoussadi (carrefour market)": { lat: 4.0890, lon: 9.7390, axe: true },
+    "denver": { lat: 4.0940, lon: 9.7440, axe: false },
+    "santa barbara": { lat: 4.0960, lon: 9.7490, axe: false },
+    "carrefour kotto": { lat: 4.0980, lon: 9.7560, axe: true },
+    "logpom (carrefour bassong)": { lat: 4.0860, lon: 9.7630, axe: true },
+    "logpom": { lat: 4.0860, lon: 9.7630, axe: true },
+    "rond-point deido": { lat: 4.0640, lon: 9.7110, axe: true },
+    "deido": { lat: 4.0640, lon: 9.7110, axe: true },
+    "marché mboppi": { lat: 4.0480, lon: 9.7180, axe: true },
+    "camp yabassi": { lat: 4.0450, lon: 9.7110, axe: true },
+    "marché central": { lat: 4.0440, lon: 9.7030, axe: true },
+    "akwa (salle des fêtes)": { lat: 4.0510, lon: 9.7010, axe: true },
+    "akwa": { lat: 4.0510, lon: 9.7010, axe: true },
+    "akwa (boulevard de la liberté)": { lat: 4.0530, lon: 9.7030, axe: true },
+    "akwa (carrefour soudanaise)": { lat: 4.0490, lon: 9.7050, axe: true },
+    "akwa (douche municipale)": { lat: 4.0560, lon: 9.7060, axe: true },
+    "bonanjo (poste centrale)": { lat: 4.0430, lon: 9.6890, axe: true },
+    "bonanjo (rond-point 4ème)": { lat: 4.0410, lon: 9.6930, axe: true },
+    "carrefour bali": { lat: 4.0370, lon: 9.6980, axe: true },
+    "bali": { lat: 4.0370, lon: 9.6980, axe: true },
+    "new-bell (carrefour anatole)": { lat: 4.0320, lon: 9.7080, axe: false },
+    "new bell": { lat: 4.0320, lon: 9.7080, axe: false },
+    "bonapriso (carrefour armée de l'air)": { lat: 4.0260, lon: 9.7020, axe: true },
+    "bonapriso": { lat: 4.0260, lon: 9.7020, axe: true },
+    "aéroport international de douala": { lat: 4.0130, lon: 9.7140, axe: true },
+    "bonabéri (ancienne route)": { lat: 4.0730, lon: 9.6810, axe: true },
+    "bonabéri": { lat: 4.0730, lon: 9.6810, axe: true },
+    "rail bonabéri": { lat: 4.0780, lon: 9.6720, axe: true },
+    "sodiko (bonabéri)": { lat: 4.0840, lon: 9.6610, axe: true },
+    "mabanda (bonabéri)": { lat: 4.0910, lon: 9.6500, axe: true },
+    "bojongo (bonabéri)": { lat: 4.0990, lon: 9.6380, axe: true }
+};
 let listeQuartiers = [], tarifs = {}, grapheReseau = {}, mapNomsPropres = new Map(), textePartageGlobal = "";
 const normaliser = (t) => t.toString().trim().toLowerCase();
+
+function calculerDistanceKm(k1, k2) {
+    const p1 = carteDouala[k1], p2 = carteDouala[k2];
+    if (!p1 || !p2) return 5.0;
+    const R = 6371;
+    const dLat = (p2.lat - p1.lat) * Math.PI / 180;
+    const dLon = (p2.lon - p1.lon) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+              Math.cos(p1.lat * Math.PI / 180) * Math.cos(p2.lat * Math.PI / 180) *
+              Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const distVolOiseau = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return Math.max(1.0, distVolOiseau * 1.28);
+}
 
 function enregistrerTrajet(d, a, m, t) {
     if (!d || !a || isNaN(m) || m <= 0) return;
@@ -96,10 +167,16 @@ function enregistrerTrajet(d, a, m, t) {
     if (!mapNomsPropres.has(dKey)) mapNomsPropres.set(dKey, d);
     if (!mapNomsPropres.has(aKey)) mapNomsPropres.set(aKey, a);
     tarifs[dKey + "_" + aKey] = tarifs[aKey + "_" + dKey] = { moto: m, taxi: (!isNaN(t) && t > 0) ? t : m };
+
+    let distKm = calculerDistanceKm(dKey, aKey);
+    let bonusAxeD = (carteDouala[dKey] && carteDouala[dKey].axe) ? 0.92 : 1.0;
+    let bonusAxeA = (carteDouala[aKey] && carteDouala[aKey].axe) ? 0.92 : 1.0;
+    let poidsRoutier = distKm * bonusAxeD * bonusAxeA;
+
     if (!grapheReseau[dKey]) grapheReseau[dKey] = [];
     if (!grapheReseau[aKey]) grapheReseau[aKey] = [];
-    grapheReseau[dKey].push({ voisin: aKey, coutMoto: m });
-    grapheReseau[aKey].push({ voisin: dKey, coutMoto: m });
+    grapheReseau[dKey].push({ voisin: aKey, distKm: distKm, poids: poidsRoutier });
+    grapheReseau[aKey].push({ voisin: dKey, distKm: distKm, poids: poidsRoutier });
 }
 
 async function chargerDonneesSheets() {
@@ -118,42 +195,81 @@ async function chargerDonneesSheets() {
                 );
             }
         }
+        const cles = Array.from(mapNomsPropres.keys());
+        for (let i = 0; i < cles.length; i++) {
+            for (let j = i + 1; j < cles.length; j++) {
+                let dKm = calculerDistanceKm(cles.at(i), cles.at(j));
+                if (dKm <= 3.5 && carteDouala[cles.at(i)] && carteDouala[cles.at(j)]) {
+                    let p = dKm * (carteDouala[cles.at(i)].axe && carteDouala[cles.at(j)].axe ? 0.85 : 1.0);
+                    grapheReseau[cles.at(i)].push({ voisin: cles.at(j), distKm: dKm, poids: p });
+                    grapheReseau[cles.at(j)].push({ voisin: cles.at(i), distKm: dKm, poids: p });
+                }
+            }
+        }
         listeQuartiers = Array.from(mapNomsPropres.values()).sort((a, b) => a.localeCompare(b, 'fr'));
         document.getElementById("statutChargement").innerText = "🟢 Base Google Sheets connectée (" + listeQuartiers.length + " lieux)";
         document.getElementById("statutChargement").style.color = "#2ecc71";
     } catch (e) {
-        baseSecours.forEach(x => enregistrerTrajet(x.d, x.a, x.m, x.t));
-        listeQuartiers = Array.from(mapNomsPropres.values()).sort((a, b) => a.localeCompare(b, 'fr'));
-        document.getElementById("statutChargement").innerText = "🟠 Mode hors-ligne (" + listeQuartiers.length + " lieux)";
+        document.getElementById("statutChargement").innerText = "🔴 Erreur de chargement de la base Google Sheets.";
     }
 }
-function estimerTrajetAlgorithme(departKey, arriveeKey) {
+
+function estimerTrajetPlusCourt(departKey, arriveeKey) {
     if (!grapheReseau[departKey] || !grapheReseau[arriveeKey]) return null;
-    let distances = {}, escales = {}, precedents = {}, nonVisites = new Set(Object.keys(grapheReseau));
-    nonVisites.forEach(n => { distances[n] = Infinity; escales[n] = 0; });
-    distances[departKey] = 0;
+    let couts = {}, distReelle = {}, precedents = {}, nonVisites = new Set(Object.keys(grapheReseau));
+    nonVisites.forEach(n => { couts[n] = Infinity; distReelle[n] = Infinity; });
+    couts[departKey] = 0;
+    distReelle[departKey] = 0;
+
     while (nonVisites.size > 0) {
         let actuel = null;
-        nonVisites.forEach(n => { if (actuel === null || distances[n] < distances[actuel]) actuel = n; });
-        if (actuel === null || distances[actuel] === Infinity || actuel === arriveeKey) break;
+        nonVisites.forEach(n => { if (actuel === null || couts[n] < couts[actuel]) actuel = n; });
+        if (actuel === null || couts[actuel] === Infinity || actuel === arriveeKey) break;
         nonVisites.delete(actuel);
+
         grapheReseau[actuel].forEach(arrete => {
             if (nonVisites.has(arrete.voisin)) {
-                let cout = distances[actuel] + (arrete.coutMoto * (escales[actuel] >= 1 ? 0.80 : 1.0));
-                if (cout < distances[arrete.voisin]) {
-                    distances[arrete.voisin] = cout;
-                    escales[arrete.voisin] = escales[actuel] + 1;
+                let nouveauCout = couts[actuel] + arrete.poids;
+                if (nouveauCout < couts[arrete.voisin]) {
+                    couts[arrete.voisin] = nouveauCout;
+                    distReelle[arrete.voisin] = distReelle[actuel] + arrete.distKm;
                     precedents[arrete.voisin] = actuel;
                 }
             }
         });
     }
-    if (distances[arriveeKey] === Infinity) return null;
-    let estMoto = Math.max(150, Math.round(distances[arriveeKey] / 50) * 50);
-    let estTaxi = estMoto <= 300 ? Math.max(200, estMoto) : (estMoto <= 400 ? estMoto - 50 : estMoto + 50);
+
+    if (distReelle[arriveeKey] === Infinity) return null;
+
+    let kmDirect = calculerDistanceKm(departKey, arriveeKey);
+    let kmFinal = Math.min(distReelle[arriveeKey], kmDirect * 1.12);
+
+    let estMoto = 150, estTaxi = 200;
+    if (kmFinal <= 3) {
+        estMoto = 150; estTaxi = 200;
+    } else if (kmFinal <= 6) {
+        estMoto = 250; estTaxi = 250;
+    } else if (kmFinal <= 10.5) {
+        estMoto = 350; estTaxi = 300;
+    } else if (kmFinal <= 15.8) {
+        estMoto = 400; estTaxi = 350;
+    } else if (kmFinal <= 19) {
+        estMoto = 500; estTaxi = 550;
+    } else if (kmFinal <= 23) {
+        estMoto = 600; estTaxi = 650;
+    } else {
+        estMoto = 700; estTaxi = 750;
+    }
+
     let chemin = [], c = arriveeKey;
     while (c) { chemin.unshift(mapNomsPropres.get(c) || c); c = precedents[c]; }
-    return { moto: estMoto, taxi: estTaxi, nbTroncons: escales[arriveeKey], cheminTexte: chemin.join(" ➔ ") };
+
+    return {
+        moto: estMoto,
+        taxi: estTaxi,
+        km: kmFinal.toFixed(1),
+        cheminTexte: chemin.join(" ➔ ")
+    };
 }
 
 function filtrerQuartiers(type) {
@@ -181,8 +297,9 @@ function calculerPrix() {
     const d = document.getElementById("searchDepart").value.trim(), a = document.getElementById("searchArrivee").value.trim();
     const dKey = normaliser(d), aKey = normaliser(a);
     if (!d || !a || dKey === aKey) { alert("Sélectionnez deux quartiers différents."); return; }
-    const off = tarifs[dKey + "_" + aKey], est = estimerTrajetAlgorithme(dKey, aKey);
+    const off = tarifs[dKey + "_" + aKey], est = estimerTrajetPlusCourt(dKey, aKey);
     if (!off && !est) { alert("L'un de ces lieux n'est pas répertorié."); return; }
+
     document.getElementById("blocOfficiel").style.display = off ? "block" : "none";
     if (off) {
         document.getElementById("prixMotoOfficiel").innerText = "🏍️ Moto : " + off.moto + " FCFA";
@@ -192,10 +309,10 @@ function calculerPrix() {
     if (est) {
         document.getElementById("prixMotoEstime").innerText = "🏍️ Moto : ~" + est.moto + " FCFA";
         document.getElementById("prixTaxiEstime").innerText = "🚖 Taxi : ~" + est.taxi + " FCFA";
-        document.getElementById("detailEscale").innerText = est.nbTroncons > 1 ? "Via : " + est.cheminTexte : "Liaison directe réseau.";
+        document.getElementById("detailEscale").innerText = "Distance estimée : ~" + est.km + " km • Axes : " + est.cheminTexte;
     }
     document.getElementById("resultatBox").style.display = "block";
-    textePartageGlobal = "Tarif TransPrix (" + d + " ➡️ " + a + ") :\n" + (off ? "✅ Officiel : Moto " + off.moto + " F | Taxi " + off.taxi + " F\n" : "") + (est ? "🧮 Estimé : Moto ~" + est.moto + " F | Taxi ~" + est.taxi + " F\n" : "") + "\nSimule ici : https://github.io";
+    textePartageGlobal = "Tarif TransPrix (" + d + " ➡️ " + a + ") :\n" + (off ? "✅ Officiel : Moto " + off.moto + " F | Taxi " + off.taxi + " F\n" : "") + (est ? "🗺️ Estimé (~" + est.km + " km) : Moto ~" + est.moto + " F | Taxi ~" + est.taxi + " F\n" : "") + "\nSimule ici : https://github.io";
 }
 
 function partagerTarif() {
