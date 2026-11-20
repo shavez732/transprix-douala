@@ -134,6 +134,7 @@ const carteDouala = {
     "bali": { lat: 4.0370, lon: 9.6980, axe: true },
     "new-bell (carrefour anatole)": { lat: 4.0320, lon: 9.7080, axe: false },
     "new-bell": { lat: 4.0320, lon: 9.7080, axe: false },
+    "new bell": { lat: 4.0320, lon: 9.7080, axe: false },
     "bonapriso (carrefour armée de l'air)": { lat: 4.0260, lon: 9.7020, axe: true },
     "bonapriso": { lat: 4.0260, lon: 9.7020, axe: true },
     "aéroport international de douala": { lat: 4.0130, lon: 9.7140, axe: true },
@@ -158,7 +159,7 @@ function calculerDistanceRoutiereKm(k1, k2) {
               Math.cos(p1.lat * Math.PI / 180) * Math.cos(p2.lat * Math.PI / 180) *
               Math.sin(dLon / 2) * Math.sin(dLon / 2);
     const distVolOiseau = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return Math.max(1.0, distVolOiseau * 1.48); // Calibré : Nkolbong->Ndokoti = ~12 km, Nkolbong->PK14 = ~14 km
+    return Math.max(1.0, distVolOiseau * 1.48);
 }
 
 function enregistrerTrajet(d, a, m, t) {
@@ -175,11 +176,21 @@ function enregistrerTrajet(d, a, m, t) {
     grapheReseau[aKey].push({ voisin: dKey, distKm: distKm, poids: distKm * bonusAxe });
 }
 
-async function chargerDonneesSheets() {
-    try {
-        const response = await fetch(urlGoogleCSV);
-        if (!response.ok) throw new Error("Erreur");
-        const lignes = (await response.text()).split(/\r?\n/);
+function construireReseauDepuisCSV(texteCSV) {
+    tarifs = {};
+    grapheReseau = {};
+    mapNomsPropres.clear();
+
+    // Pré-remplissage avec les lieux de carteDouala (garantit le fonctionnement même sans aucun cache)
+    Object.keys(carteDouala).forEach(k => {
+        if (k !== "new bell") {
+            let nomFormate = k.replace(/\b\w/g, l => l.toUpperCase()).replace(/Pk(\d+)/g, "PK$1").replace(/Iut/g, "IUT").replace(/Iug/g, "IUG").replace(/Essec/g, "ESSEC").replace(/Ccc/g, "CCC");
+            mapNomsPropres.set(k, nomFormate);
+        }
+    });
+
+    if (texteCSV) {
+        const lignes = texteCSV.split(/\r?\n/);
         for (let i = 1; i < lignes.length; i++) {
             const cols = lignes.at(i).trim().split(",");
             if (cols.length >= 4) {
@@ -190,23 +201,55 @@ async function chargerDonneesSheets() {
                     parseInt(cols.at(3).replace(/\D/g, ""), 10)
                 );
             }
+        }
     }
-            const cles = Array.from(mapNomsPropres.keys());
-        for (let i = 0; i < cles.length; i++) {
-            for (let j = i + 1; j < cles.length; j++) {
-                let dKm = calculerDistanceRoutiereKm(cles.at(i), cles.at(j));
-                if (dKm <= 4.5 && carteDouala[cles.at(i)] && carteDouala[cles.at(j)]) {
-                    let p = dKm * (carteDouala[cles.at(i)].axe && carteDouala[cles.at(j)].axe ? 0.82 : 1.0);
-                    grapheReseau[cles.at(i)].push({ voisin: cles.at(j), distKm: dKm, poids: p });
-                    grapheReseau[cles.at(j)].push({ voisin: cles.at(i), distKm: dKm, poids: p });
-                }
+
+    const cles = Array.from(mapNomsPropres.keys());
+    for (let i = 0; i < cles.length; i++) {
+        for (let j = i + 1; j < cles.length; j++) {
+            let dKm = calculerDistanceRoutiereKm(cles.at(i), cles.at(j));
+            if (dKm <= 4.5 && carteDouala[cles.at(i)] && carteDouala[cles.at(j)]) {
+                let p = dKm * (carteDouala[cles.at(i)].axe && carteDouala[cles.at(j)].axe ? 0.82 : 1.0);
+                if (!grapheReseau[cles.at(i)]) grapheReseau[cles.at(i)] = [];
+                if (!grapheReseau[cles.at(j)]) grapheReseau[cles.at(j)] = [];
+                grapheReseau[cles.at(i)].push({ voisin: cles.at(j), distKm: dKm, poids: p });
+                grapheReseau[cles.at(j)].push({ voisin: cles.at(i), distKm: dKm, poids: p });
             }
         }
-        listeQuartiers = Array.from(mapNomsPropres.values()).sort((a, b) => a.localeCompare(b, 'fr'));
-        document.getElementById("statutChargement").innerText = "🟢 Base Google Sheets connectée (" + listeQuartiers.length + " lieux)";
-        document.getElementById("statutChargement").style.color = "#2ecc71";
+    }
+    listeQuartiers = Array.from(mapNomsPropres.values()).sort((a, b) => a.localeCompare(b, 'fr'));
+}
+async function chargerDonneesSheets() {
+    const cacheCSV = localStorage.getItem("transprix_csv_cache");
+
+    // 1. Chargement immédiat depuis la mémoire du téléphone (fonctionne instantanément hors-ligne)
+    if (cacheCSV) {
+        construireReseauDepuisCSV(cacheCSV);
+        document.getElementById("statutChargement").innerText = "🟡 Mode hors-ligne prêt (" + listeQuartiers.length + " lieux en mémoire)";
+        document.getElementById("statutChargement").style.color = "#f39c12";
+    } else {
+        construireReseauDepuisCSV(null);
+    }
+
+    // 2. Tentative de mise à jour en direct depuis Google Sheets si connexion active
+    try {
+        const response = await fetch(urlGoogleCSV, { cache: "no-store" });
+        if (!response.ok) throw new Error("Erreur réseau");
+        const texteCSV = await response.text();
+        if (texteCSV && texteCSV.includes(",")) {
+            localStorage.setItem("transprix_csv_cache", texteCSV);
+            construireReseauDepuisCSV(texteCSV);
+            document.getElementById("statutChargement").innerText = "🟢 Base Google Sheets connectée (" + listeQuartiers.length + " lieux)";
+            document.getElementById("statutChargement").style.color = "#2ecc71";
+        }
     } catch (e) {
-        document.getElementById("statutChargement").innerText = "🔴 Erreur de chargement de la base Google Sheets.";
+        if (cacheCSV) {
+            document.getElementById("statutChargement").innerText = "🟠 Hors-ligne : tarifs sauvegardés actifs (" + listeQuartiers.length + " lieux)";
+            document.getElementById("statutChargement").style.color = "#e67e22";
+        } else {
+            document.getElementById("statutChargement").innerText = "🟠 Hors-ligne : estimation par axes actifs (" + listeQuartiers.length + " lieux)";
+            document.getElementById("statutChargement").style.color = "#e67e22";
+        }
     }
 }
 
@@ -238,7 +281,7 @@ function estimerTrajetPlusCourt(departKey, arriveeKey) {
     let kmDirect = calculerDistanceRoutiereKm(departKey, arriveeKey);
     let kmFinal = Math.min(distReelle[arriveeKey], kmDirect * 1.08);
 
-    // Barème étalonné sur vos repères : 11-15.8 km = 400 F moto / 350 F taxi ; >16 km = taxi +50/100 F
+    // Barème étalonné Douala : 11-15.8 km = 400 F moto / 350 F taxi ; >16 km = taxi +50/100 F
     let estMoto = 150, estTaxi = 200;
     if (kmFinal <= 2.5) {
         estMoto = 150; estTaxi = 200;
@@ -334,8 +377,8 @@ document.getElementById('btnPWAInstall').addEventListener('click', async () => {
 });
 
 if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.getRegistrations().then(registrations => {
-        for (let r of registrations) r.unregister();
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/transprix-douala/sw.js').catch(() => {});
     });
 }
 
