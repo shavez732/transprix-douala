@@ -1,6 +1,6 @@
 const configDouala = {
     nom: "Douala",
-    urlCSV: "https://google.com",
+    urlCSV: "https://docs.google.com/spreadsheets/d/e/2PACX-1vSq9OEZUP1AT0zs08bc4G3Z4gmirf0g8tRq0WztCRCXsOfMf_tZTZI9qupwPm-8sPMDvGvHnTzGjaCo/pub?output=csv",
     bareme: function(km) {
         if (km <= 2.5) return { moto: 150, taxi: 200 };
         if (km <= 5.5) return { moto: 250, taxi: 250 };
