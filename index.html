@@ -74,7 +74,7 @@
 </div>
 <script>
 const urlGoogleCSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSq9OEZUP1AT0zs08bc4G3Z4gmirf0g8tRq0WztCRCXsOfMf_tZTZI9qupwPm-8sPMDvGvHnTzGjaCo/pub?output=csv";
-const carteDouala = {
+    const carteDouala = {
     "total nkolbong (yassa)": { lat: 3.9980, lon: 9.8160, axe: true },
     "carrefour yassa": { lat: 4.0042, lon: 9.7985, axe: true },
     "yassa": { lat: 4.0042, lon: 9.7985, axe: true },
@@ -216,8 +216,8 @@ async function chargerDonneesSheets() {
                     parseInt(cols.at(3).replace(/\D/g, ""), 10)
                 );
             }
-        }
-        const cles = Array.from(mapNomsPropres.keys());
+                         }
+            const cles = Array.from(mapNomsPropres.keys());
         for (let i = 0; i < cles.length; i++) {
             for (let j = i + 1; j < cles.length; j++) {
                 let dKm = calculerDistanceRoutiereKm(cles.at(i), cles.at(j));
