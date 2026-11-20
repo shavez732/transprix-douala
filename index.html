@@ -48,7 +48,7 @@
         <input type="text" id="searchArrivee" placeholder="Ex: PK14, Bonamoussadi, Deido..." oninput="filtrerQuartiers('Arrivee')" autocomplete="off">
         <div id="optionsArrivee" class="options-list"></div>
     </div>
-    <button onclick="calculerPrix()">Afficher les Tarifs</button>
+    <button id="btnCalculer" onclick="calculerPrix()">Afficher les Tarifs</button>
     <div id="resultatBox" class="result-box">
         <div id="blocOfficiel" class="card-tarif card-officiel" style="display: none;">
             <div class="card-title" style="color: #27ae60;">✅ Tarif Officiel (Base de données)</div>
@@ -56,7 +56,7 @@
             <div id="prixTaxiOfficiel" class="price-line">🚖 Taxi : -- FCFA</div>
         </div>
         <div id="blocEstime" class="card-tarif card-estime" style="display: none;">
-            <div class="card-title" style="color: #d68910;">🗺️ Tarif Estimé (Axe principal le plus court)</div>
+            <div class="card-title" style="color: #d68910;">🗺️ Tarif Estimé (Moteur routier direct)</div>
             <div id="prixMotoEstime" class="price-line">🏍️ Moto : -- FCFA</div>
             <div id="prixTaxiEstime" class="price-line">🚖 Taxi : -- FCFA</div>
             <div id="detailEscale" class="note" style="font-style: italic;"></div>
@@ -74,7 +74,6 @@
 </div>
 <script>
 const urlGoogleCSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSq9OEZUP1AT0zs08bc4G3Z4gmirf0g8tRq0WztCRCXsOfMf_tZTZI9qupwPm-8sPMDvGvHnTzGjaCo/pub?output=csv";
-
 const carteDouala = {
     "total nkolbong (yassa)": { lat: 3.9980, lon: 9.8160, axe: true },
     "carrefour yassa": { lat: 4.0042, lon: 9.7985, axe: true },
@@ -145,9 +144,31 @@ const carteDouala = {
     "mabanda (bonabéri)": { lat: 4.0910, lon: 9.6500, axe: true },
     "bojongo (bonabéri)": { lat: 4.0990, lon: 9.6380, axe: true }
 };
+
 let listeQuartiers = [], tarifs = {}, grapheReseau = {}, mapNomsPropres = new Map(), textePartageGlobal = "";
 const normaliser = (t) => t.toString().trim().toLowerCase();
 
+// 1. Moteur routier direct via API OSRM (itinéraire routier réel le plus court)
+async function calculerDistanceOSRM(k1, k2) {
+    const p1 = carteDouala[k1], p2 = carteDouala[k2];
+    if (!p1 || !p2) return null;
+    const url = `https://project-osrm.org{p1.lon},${p1.lat};${p2.lon},${p2.lat}?overview=false`;
+    try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 4000);
+        const response = await fetch(url, { signal: controller.signal });
+        clearTimeout(timeoutId);
+        const data = await response.json();
+        if (data.code === "Ok" && data.routes && data.routes.length > 0) {
+            return Math.max(1.0, data.routes.distance / 1000);
+        }
+        return null;
+    } catch (e) {
+        return null;
+    }
+}
+
+// 2. Calcul routier de secours (hors-ligne / repli géodésique calibré Douala)
 function calculerDistanceRoutiereKm(k1, k2) {
     const p1 = carteDouala[k1], p2 = carteDouala[k2];
     if (!p1 || !p2) return 6.0;
@@ -158,7 +179,7 @@ function calculerDistanceRoutiereKm(k1, k2) {
               Math.cos(p1.lat * Math.PI / 180) * Math.cos(p2.lat * Math.PI / 180) *
               Math.sin(dLon / 2) * Math.sin(dLon / 2);
     const distVolOiseau = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return Math.max(1.0, distVolOiseau * 1.48); // Calibré : Nkolbong->Ndokoti = ~12 km, Nkolbong->PK14 = ~14 km
+    return Math.max(1.0, distVolOiseau * 1.48);
 }
 
 function enregistrerTrajet(d, a, m, t) {
@@ -167,10 +188,8 @@ function enregistrerTrajet(d, a, m, t) {
     if (!mapNomsPropres.has(dKey)) mapNomsPropres.set(dKey, d);
     if (!mapNomsPropres.has(aKey)) mapNomsPropres.set(aKey, a);
     tarifs[dKey + "_" + aKey] = tarifs[aKey + "_" + dKey] = { moto: m, taxi: (!isNaN(t) && t > 0) ? t : m };
-
     let distKm = calculerDistanceRoutiereKm(dKey, aKey);
     let bonusAxe = (carteDouala[dKey]?.axe && carteDouala[aKey]?.axe) ? 0.85 : 1.0;
-
     if (!grapheReseau[dKey]) grapheReseau[dKey] = [];
     if (!grapheReseau[aKey]) grapheReseau[aKey] = [];
     grapheReseau[dKey].push({ voisin: aKey, distKm: distKm, poids: distKm * bonusAxe });
@@ -178,6 +197,11 @@ function enregistrerTrajet(d, a, m, t) {
 }
 
 async function chargerDonneesSheets() {
+    Object.keys(carteDouala).forEach(k => {
+        if (!mapNomsPropres.has(k)) {
+            mapNomsPropres.set(k, k.replace(/\b\w/g, l => l.toUpperCase()));
+        }
+    });
     try {
         const response = await fetch(urlGoogleCSV);
         if (!response.ok) throw new Error("Erreur");
@@ -199,6 +223,8 @@ async function chargerDonneesSheets() {
                 let dKm = calculerDistanceRoutiereKm(cles.at(i), cles.at(j));
                 if (dKm <= 4.5 && carteDouala[cles.at(i)] && carteDouala[cles.at(j)]) {
                     let p = dKm * (carteDouala[cles.at(i)].axe && carteDouala[cles.at(j)].axe ? 0.82 : 1.0);
+                    if (!grapheReseau[cles.at(i)]) grapheReseau[cles.at(i)] = [];
+                    if (!grapheReseau[cles.at(j)]) grapheReseau[cles.at(j)] = [];
                     grapheReseau[cles.at(i)].push({ voisin: cles.at(j), distKm: dKm, poids: p });
                     grapheReseau[cles.at(j)].push({ voisin: cles.at(i), distKm: dKm, poids: p });
                 }
@@ -208,41 +234,13 @@ async function chargerDonneesSheets() {
         document.getElementById("statutChargement").innerText = "🟢 Base Google Sheets connectée (" + listeQuartiers.length + " lieux)";
         document.getElementById("statutChargement").style.color = "#2ecc71";
     } catch (e) {
-        document.getElementById("statutChargement").innerText = "🔴 Erreur de chargement de la base Google Sheets.";
+        listeQuartiers = Array.from(mapNomsPropres.values()).sort((a, b) => a.localeCompare(b, 'fr'));
+        document.getElementById("statutChargement").innerText = "🟠 Mode hors-ligne / Moteur direct actif (" + listeQuartiers.length + " lieux)";
     }
 }
 
-function estimerTrajetPlusCourt(departKey, arriveeKey) {
-    if (!grapheReseau[departKey] || !grapheReseau[arriveeKey]) return null;
-    let couts = {}, distReelle = {}, precedents = {}, nonVisites = new Set(Object.keys(grapheReseau));
-    nonVisites.forEach(n => { couts[n] = Infinity; distReelle[n] = Infinity; });
-    couts[departKey] = 0;
-    distReelle[departKey] = 0;
-
-    while (nonVisites.size > 0) {
-        let actuel = null;
-        nonVisites.forEach(n => { if (actuel === null || couts[n] < couts[actuel]) actuel = n; });
-        if (actuel === null || couts[actuel] === Infinity || actuel === arriveeKey) break;
-        nonVisites.delete(actuel);
-
-        grapheReseau[actuel].forEach(arrete => {
-            if (nonVisites.has(arrete.voisin)) {
-                let nouveauCout = couts[actuel] + arrete.poids;
-                if (nouveauCout < couts[arrete.voisin]) {
-                    couts[arrete.voisin] = nouveauCout;
-                    distReelle[arrete.voisin] = distReelle[actuel] + arrete.distKm;
-                    precedents[arrete.voisin] = actuel;
-                }
-            }
-        });
-    }
-
-    if (distReelle[arriveeKey] === Infinity) return null;
-
-    let kmDirect = calculerDistanceRoutiereKm(departKey, arriveeKey);
-    let kmFinal = Math.min(distReelle[arriveeKey], kmDirect * 1.08);
-
-    // Barème étalonné sur vos repères : 11-15.8 km = 400 F moto / 300-350 F taxi ; >16 km = taxi +50/100 F
+// Application du barème kilométrique étalonné Douala
+function appliquerBaremeKilometrique(kmFinal) {
     let estMoto = 150, estTaxi = 200;
     if (kmFinal <= 2.5) {
         estMoto = 150; estTaxi = 200;
@@ -259,15 +257,71 @@ function estimerTrajetPlusCourt(departKey, arriveeKey) {
     } else {
         estMoto = 700; estTaxi = 750;
     }
+    return { moto: estMoto, taxi: estTaxi };
+}
+
+// Algorithme hybride : Moteur routier direct OSRM + Repli graphe axes principaux
+async function estimerTrajetMoteurDirect(departKey, arriveeKey) {
+    const distOSRM = await calculerDistanceOSRM(departKey, arriveeKey);
+    if (distOSRM !== null) {
+        const prix = appliquerBaremeKilometrique(distOSRM);
+        return {
+            moto: prix.moto,
+            taxi: prix.taxi,
+            km: distOSRM.toFixed(1),
+            methode: "Itinéraire routier direct (OSRM)"
+        };
+    }
+
+    if (!grapheReseau[departKey] || !grapheReseau[arriveeKey]) {
+        if (carteDouala[departKey] && carteDouala[arriveeKey]) {
+            let kmDirect = calculerDistanceRoutiereKm(departKey, arriveeKey);
+            const prix = appliquerBaremeKilometrique(kmDirect);
+            return {
+                moto: prix.moto,
+                taxi: prix.taxi,
+                km: kmDirect.toFixed(1),
+                methode: "Estimation directe (axes principaux)"
+            };
+        }
+        return null;
+    }
+
+    let couts = {}, distReelle = {}, precedents = {}, nonVisites = new Set(Object.keys(grapheReseau));
+    nonVisites.forEach(n => { couts[n] = Infinity; distReelle[n] = Infinity; });
+    couts[departKey] = 0;
+    distReelle[departKey] = 0;
+
+    while (nonVisites.size > 0) {
+        let actuel = null;
+        nonVisites.forEach(n => { if (actuel === null || couts[n] < couts[actuel]) actuel = n; });
+        if (actuel === null || couts[actuel] === Infinity || actuel === arriveeKey) break;
+        nonVisites.delete(actuel);
+        grapheReseau[actuel].forEach(arrete => {
+            if (nonVisites.has(arrete.voisin)) {
+                let nouveauCout = couts[actuel] + arrete.poids;
+                if (nouveauCout < couts[arrete.voisin]) {
+                    couts[arrete.voisin] = nouveauCout;
+                    distReelle[arrete.voisin] = distReelle[actuel] + arrete.distKm;
+                    precedents[arrete.voisin] = actuel;
+                }
+            }
+        });
+    }
+
+    if (distReelle[arriveeKey] === Infinity) return null;
+    let kmDirect = calculerDistanceRoutiereKm(departKey, arriveeKey);
+    let kmFinal = Math.min(distReelle[arriveeKey], kmDirect * 1.08);
+    const prix = appliquerBaremeKilometrique(kmFinal);
 
     let chemin = [], c = arriveeKey;
     while (c) { chemin.unshift(mapNomsPropres.get(c) || c); c = precedents[c]; }
 
     return {
-        moto: estMoto,
-        taxi: estTaxi,
+        moto: prix.moto,
+        taxi: prix.taxi,
         km: kmFinal.toFixed(1),
-        cheminTexte: chemin.join(" ➔ ")
+        methode: "Axes : " + chemin.join(" ➔ ")
     };
 }
 
@@ -292,11 +346,21 @@ document.addEventListener("click", (e) => {
     }
 });
 
-function calculerPrix() {
+async function calculerPrix() {
     const d = document.getElementById("searchDepart").value.trim(), a = document.getElementById("searchArrivee").value.trim();
     const dKey = normaliser(d), aKey = normaliser(a);
     if (!d || !a || dKey === aKey) { alert("Sélectionnez deux quartiers différents."); return; }
-    const off = tarifs[dKey + "_" + aKey], est = estimerTrajetPlusCourt(dKey, aKey);
+
+    const btn = document.getElementById("btnCalculer");
+    btn.innerText = "⏳ Calcul de l'itinéraire en cours...";
+    btn.disabled = true;
+
+    const off = tarifs[dKey + "_" + aKey];
+    const est = await estimerTrajetMoteurDirect(dKey, aKey);
+
+    btn.innerText = "Afficher les Tarifs";
+    btn.disabled = false;
+
     if (!off && !est) { alert("L'un de ces lieux n'est pas répertorié."); return; }
 
     document.getElementById("blocOfficiel").style.display = off ? "block" : "none";
@@ -304,12 +368,14 @@ function calculerPrix() {
         document.getElementById("prixMotoOfficiel").innerText = "🏍️ Moto : " + off.moto + " FCFA";
         document.getElementById("prixTaxiOfficiel").innerText = "🚖 Taxi : " + off.taxi + " FCFA";
     }
+
     document.getElementById("blocEstime").style.display = est ? "block" : "none";
     if (est) {
         document.getElementById("prixMotoEstime").innerText = "🏍️ Moto : ~" + est.moto + " FCFA";
         document.getElementById("prixTaxiEstime").innerText = "🚖 Taxi : ~" + est.taxi + " FCFA";
-        document.getElementById("detailEscale").innerText = "Distance estimée : ~" + est.km + " km • Axes : " + est.cheminTexte;
+        document.getElementById("detailEscale").innerText = "Distance : ~" + est.km + " km • " + est.methode;
     }
+
     document.getElementById("resultatBox").style.display = "block";
     textePartageGlobal = "Tarif TransPrix (" + d + " ➡️ " + a + ") :\n" + (off ? "✅ Officiel : Moto " + off.moto + " F | Taxi " + off.taxi + " F\n" : "") + (est ? "🗺️ Estimé (~" + est.km + " km) : Moto ~" + est.moto + " F | Taxi ~" + est.taxi + " F\n" : "") + "\nSimule ici : https://github.io";
 }
@@ -325,6 +391,7 @@ window.addEventListener('beforeinstallprompt', (e) => {
     deferredPrompt = e;
     document.getElementById('btnPWAInstall').style.display = 'block';
 });
+
 document.getElementById('btnPWAInstall').addEventListener('click', async () => {
     if (deferredPrompt) {
         deferredPrompt.prompt();
@@ -340,4 +407,4 @@ if ('serviceWorker' in navigator) {
 chargerDonneesSheets();
 </script>
 </body>
-    </html>
+</html>
