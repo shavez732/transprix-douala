@@ -206,3 +206,4 @@ const configDouala = {
         "carrefour pk16 (entrée campus 3)": { lat: 4.0870, lon: 9.8055, axe: true }
     }
 };
+                                                        
