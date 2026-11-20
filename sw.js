@@ -1,8 +1,9 @@
-const CACHE_NAME = 'transprix-douala-v3';
+const CACHE_NAME = 'transprix-douala-v4';
 const ASSETS = [
   '/transprix-douala/',
   '/transprix-douala/index.html',
-  '/transprix-douala/manifest.json'
+  '/transprix-douala/manifest.json',
+  '/transprix-douala/icon.svg'
 ];
 
 self.addEventListener('install', (event) => {
@@ -22,7 +23,7 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // On laisse les requêtes Google Sheets passer par le réseau (gérées par localStorage)
+  // Les requêtes Google Sheets ne passent pas par le cache SW (gérées par localStorage dans index.html)
   if (event.request.url.includes('://google.com')) return;
 
   event.respondWith(
