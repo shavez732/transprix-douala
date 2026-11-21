@@ -1,6 +1,6 @@
 const configYaounde = {
     nom: "Yaoundé",
-    urlCSV: "", // Vous pourrez coller ici le lien CSV d'un onglet Yaoundé plus tard
+    urlCSV: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTNMWnexeXBuXSxmOufonP_iXi2jEqhVvWNxjQrlscQJT55TfgyqpwAMJbxDXw_GbKAIRtCWZV__Tcn/pub?output=csv", // Vous pourrez coller ici le lien CSV d'un onglet Yaoundé plus tard
     bareme: function(km) {
         if (km <= 2.5) return { moto: 150, taxi: 350 };
         if (km <= 6.0) return { moto: 200, taxi: 350 };
