@@ -36,8 +36,7 @@
         .suggestion-box { margin-top: 22px; padding-top: 15px; border-top: 1px dashed #ccc; }
         #statutChargement { text-align: center; font-size: 12px; margin-bottom: 10px; color: #e67e22; font-weight: bold; }
         #statutFormulaire { font-size: 13px; font-weight: bold; margin-top: 8px; text-align: center; display: none; }
-    </style>
-    <script defer src="https://cloud.umami.is/script.js" data-website-id="a08da2d0-48ff-4c09-9b22-dd5fe4dca0a2"></script> 
+    </style> 
     <script defer src="https://cloud.umami.is/script.js" data-website-id="a08da2d0-48ff-4c09-9b22-dd5fe4dca0a2"></script>
 </head>
 <body>
@@ -93,21 +92,17 @@
     <p class="note" style="margin-bottom: 10px;">
         Aidez-nous à financer la maintenance et à étendre la couverture géographique (Bafoussam, Bamenda, Garoua...) Dès 100F.
     </p>
-    <div style="background: #fef5e7; border: 1px solid #fad7a0; border-radius: 8px; padding: 10px; font-size: 13px; text-align: left;">
-        <div style="margin-bottom: 6px;">🟠 <strong>Orange Money (Code Marchand / N°) :</strong> <span id="numOM">69XXXXXXX</span></div>
-        <div>🟡 <strong>MTN Mobile Money (MoMo) :</strong> <span id="numMOMO">67XXXXXXX</span></div>
-    </div>
+    <div id="boxNumeros" onclick="basculerNumeros()" style="background: #fef5e7; border: 1px solid #fad7a0; border-radius: 8px; padding: 10px; font-size: 13px; text-align: left; cursor: pointer; user-select: none;">
+    <div style="margin-bottom: 6px;">🟠 <strong>Orange Money :</strong> <span id="numOM">69XXXXXXX</span></div>
+    <div>🟡 <strong>MTN MoMo :</strong> <span id="numMOMO">68XXXXXXX</span></div>
+    <div id="indiceToucher" style="font-size: 11px; color: #d35400; text-align: right; margin-top: 4px;">👆 Toucher pour afficher</div>
+</div>
     <button type="button" onclick="navigator.clipboard.writeText('OM: 691346838 | MoMo: 682583196'); alert('Numéros de don copiés !');" style="background: #2c3e50; margin-top: 8px; font-size: 13px; padding: 9px;">
         📋 Copier les numéros de soutien
     </button>
 </div>
 
 </div>
-    <div style="text-align: center; margin-top: 16px; font-size: 13px; color: #7f8c8d;">
-    <a href="COLLE_ICI_TON_LIEN_SHARE_URL_UMAMI" target="_blank" style="text-decoration: none; color: #2c3e50; background: #ecf0f1; padding: 6px 14px; border-radius: 20px; display: inline-block; font-weight: bold;">
-        👁️ ... visites
-    </a>
-</div> 
     <div style="text-align: center; margin-top: 16px; font-size: 13px; color: #7f8c8d;">
     <a href="https://cloud.umami.is/share/gQl7d8CoR9DkDjdA" target="_blank" style="text-decoration: none; color: #2c3e50; background: #ecf0f1; padding: 6px 14px; border-radius: 20px; display: inline-block; font-weight: bold;">
         👁️ ... visites
@@ -424,6 +419,13 @@ if ('serviceWorker' in navigator) {
 chargerDonneesVille("douala");
 if (villesConfig.yaounde) {
     setTimeout(() => preparerDonneesVille("yaounde", localStorage.getItem("transprix_csv_yaounde")), 300);
+} 
+    let numerosVisibles = false;
+function basculerNumeros() {
+    numerosVisibles = !numerosVisibles;
+    document.getElementById("numOM").innerText = numerosVisibles ? "691346838" : "69XXXXXXX";
+    document.getElementById("numMOMO").innerText = numerosVisibles ? "682583196" : "68XXXXXXX";
+    document.getElementById("indiceToucher").innerText = numerosVisibles ? "🔒 Toucher pour masquer" : "👆 Toucher pour afficher";
 }
 </script>
 </body>
