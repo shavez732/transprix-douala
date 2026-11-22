@@ -446,7 +446,7 @@ const configYaounde = {
         "carrefour fébé": { lat: 3.9050, lon: 11.4990, axe: false },
         "carrefour nkol-eton": { lat: 3.8825, lon: 11.5185, axe: true },
         "carrefour mballa ii (crtv)": { lat: 3.8845, lon: 11.5295, axe: true },
-        "carrefour jamot (mfandena)": { lat: 3.8850, lon: 11.5350, axe: tru },
+        "carrefour jamot (mfandena)": { lat: 3.8850, lon: 11.5350, axe: true },
         "carrefour ngousso (chapelle)": { lat: 3.8960, lon: 11.5440, axe: true },
         "carrefour soa (marché)": { lat: 3.9730, lon: 11.5900, axe: true },
         "carrefour nkolfoulou (entrée)": { lat: 3.9380, lon: 11.5680, axe: true },
