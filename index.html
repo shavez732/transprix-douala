@@ -371,7 +371,7 @@ function calculerPrix() {
         document.getElementById("detailEscale").innerText = "Distance estimée : ~" + est.km + " km • Axes : " + est.cheminTexte;
     }
     document.getElementById("resultatBox").style.display = "block";
-    textePartageGlobal = "Tarif TransPrix " + villesConfig[villeActive].nom + " (" + d + " ➡️ " + a + ") :\n" + (off ? "✅ Officiel : Moto " + off.moto + " F | Taxi " + off.taxi + " F\n" : "") + (est ? "🗺️ Estimé (~" + est.km + " km) : Moto ~" + est.moto + " F | Taxi ~" + est.taxi + " F\n" : "") + "\nSimule ici : https://github.io";
+    textePartageGlobal = "Tarif TransPrix " + villesConfig[villeActive].nom + " (" + d + " ➡️ " + a + ") :\n" + (off ? "✅ Officiel : Moto " + off.moto + " F | Taxi " + off.taxi + " F\n" : "") + (est ? "🗺️ Estimé (~" + est.km + " km) : Moto ~" + est.moto + " F | Taxi ~" + est.taxi + " F\n" : "") + "\nSimule ici : https://shavez732.github.io/transprix-douala/";
 }
 
 function partagerTarif() {
@@ -386,7 +386,7 @@ document.getElementById("formSuggestion").addEventListener("submit", async funct
     try {
         const fd = new FormData();
         fd.append("trajet", "[" + villesConfig[villeActive].nom + "] " + input.value);
-        const res = await fetch("https://formspree.io", { method: "POST", body: fd, headers: { "Accept": "application/json" } });
+        const res = await fetch("https://formspree.io/f/xgawglkj", { method: "POST", body: fd, headers: { "Accept": "application/json" } });
         statut.style.display = "block";
         if (res.ok) {
             statut.style.color = "#27ae60"; statut.innerText = "✅ Merci ! Votre suggestion a bien été envoyée."; input.value = "";
