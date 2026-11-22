@@ -1,13 +1,14 @@
 const configYaounde = {
     nom: "Yaoundé",
     urlCSV: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTNMWnexeXBuXSxmOufonP_iXi2jEqhVvWNxjQrlscQJT55TfgyqpwAMJbxDXw_GbKAIRtCWZV__Tcn/pub?output=csv",
-    bareme: function(km) {
-        if (km <= 2.5) return { moto: 150, taxi: 350 };
-        if (km <= 6.0) return { moto: 200, taxi: 350 };
-        if (km <= 10.5) return { moto: 300, taxi: 350 };
-        if (km <= 15.5) return { moto: 400, taxi: 400 };
-        if (km <= 20.0) return { moto: 500, taxi: 500 };
-        return { moto: 600, taxi: 700 };
+        bareme: function(km) {
+        if (km <= 2.5) return { moto: 150, taxi: 300 };
+        if (km <= 5.5) return { moto: 250, taxi: 350 };
+        if (km <= 10.5) return { moto: 350, taxi: 400 };
+        if (km <= 15.8) return { moto: 400, taxi: 450 };
+        if (km <= 19.0) return { moto: 500, taxi: 650 };
+        if (km <= 23.0) return { moto: 600, taxi: 750 };
+        return { moto: 700, taxi: 850 };
     },
     lieux: {
         // --- BASE D'ORIGINE (1/3) ---
