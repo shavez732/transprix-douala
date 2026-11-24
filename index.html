@@ -48,6 +48,7 @@
         <select id="selectVille" onchange="changerVille()">
             <option value="douala">Douala</option>
             <option value="yaounde">Yaoundé</option>
+            <option value="bafoussam">Bafoussam</option>
         </select>
     </div>
     <div id="statutChargement">🔄 Initialisation...</div>
@@ -110,11 +111,14 @@
 </div>
 <script src="douala.js"></script>
 <script src="yaounde.js"></script>
+<script src="bafoussam.js"></script>    
 <script>
 const URL_CSV_DOUALA_SECOURS = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSq9OEZUP1AT0zs08bc4G3Z4gmirf0g8tRq0WztCRCXsOfMf_tZTZI9qupwPm-8sPMDvGvHnTzGjaCo/pub?output=csv";
 const villesConfig = {};
 if (typeof configDouala !== "undefined") villesConfig.douala = configDouala;
 if (typeof configYaounde !== "undefined") villesConfig.yaounde = configYaounde;
+if (typeof configBafoussam !== "undefined") villesConfig.bafoussam = configBafoussam;
+
 
 let villeActive = "douala";
 const memoireVilles = {};
