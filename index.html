@@ -36,10 +36,58 @@
         .suggestion-box { margin-top: 22px; padding-top: 15px; border-top: 1px dashed #ccc; }
         #statutChargement { text-align: center; font-size: 12px; margin-bottom: 10px; color: #e67e22; font-weight: bold; }
         #statutFormulaire { font-size: 13px; font-weight: bold; margin-top: 8px; text-align: center; display: none; }
+        /* --- BARRE SUPÉRIEURE & MENU COULISSANT --- */
+.top-navbar { display: flex; align-items: center; justify-content: space-between; background: white; padding: 12px 16px; border-radius: 12px; max-width: 450px; margin: 0 auto 10px auto; box-shadow: 0 2px 10px rgba(0,0,0,0.06); }
+/* ... (Styles CSS pour le menu coulissant, le carrousel et le pied de page) */
     </style> 
     <script defer src="https://cloud.umami.is/script.js" data-website-id="a08da2d0-48ff-4c09-9b22-dd5fe4dca0a2"></script>
 </head>
 <body>
+<!-- BARRE SUPÉRIEURE -->
+<div class="top-navbar">
+  <button class="hamburger-btn" onclick="ouvrirMenu()" aria-label="Menu">☰</button>
+  <span class="nav-brand">🇨🇲 TransPrix Cameroun</span>
+  <span style="width:28px;"></span>
+</div>
+
+<!-- FOND SOMBRE & TIROIR COULISSANT -->
+<div id="menuOverlay" class="menu-overlay" onclick="fermerMenu()"></div>
+<div id="sideDrawer" class="side-drawer">
+  <div class="drawer-header">
+    <span>🇨🇲 TransPrix</span>
+    <button class="close-btn" onclick="fermerMenu()">✕</button>
+  </div>
+  <a href="#titreApp" onclick="fermerMenu()">🚖 Simulateur de tarifs</a>
+  <a href="#selectVille" onclick="choisirVilleMenu('douala')">🏙 Douala (428 lieux)</a>
+  <a href="#selectVille" onclick="choisirVilleMenu('yaounde')">🏙 Yaoundé (473 lieux)</a>
+  <a href="#selectVille" onclick="choisirVilleMenu('bafoussam')">🏙 Bafoussam (224 lieux)</a>
+  <a href="#formSuggestion" onclick="fermerMenu()">📢 Suggérer un tarif</a>
+  <a href="#boxNumeros" onclick="fermerMenu()">🤝 Soutenir le projet</a>
+  <a href="#footerContact" onclick="fermerMenu()">📩 À propos & Contacts</a>
+</div>
+
+<!-- CARROUSEL DE PHOTOS DES VILLES -->
+<div class="carousel-box">
+  <div id="carouselTrack" class="carousel-track">
+    <div class="carousel-slide" style="background: linear-gradient(135deg, #d35400, #e67e22);">
+      <img src="images/douala.jpg" alt="Douala" onerror="this.style.display='none'">
+      <div class="slide-caption">🏙 Douala — Capitale économique (428 lieux)</div>
+    </div>
+    <div class="carousel-slide" style="background: linear-gradient(135deg, #16a085, #27ae60);">
+      <img src="images/yaounde.jpg" alt="Yaoundé" onerror="this.style.display='none'">
+      <div class="slide-caption">🏛 Yaoundé — Capitale politique (473 lieux)</div>
+    </div>
+    <div class="carousel-slide" style="background: linear-gradient(135deg, #2c3e50, #2980b9);">
+      <img src="images/bafoussam.jpg" alt="Bafoussam" onerror="this.style.display='none'">
+      <div class="slide-caption">⛰ Bafoussam — Capitale de l'Ouest (224 lieux)</div>
+    </div>
+  </div>
+  <div class="carousel-dots">
+    <span class="dot active" onclick="allerSlide(0)"></span>
+    <span class="dot" onclick="allerSlide(1)"></span>
+    <span class="dot" onclick="allerSlide(2)"></span>
+  </div>
+</div>
 <div class="container">
     <h1 id="titreApp">🇨🇲 TransPrix Douala</h1>
     <p class="subtitle">Trouvez le juste prix pour votre trajet</p>
@@ -109,6 +157,32 @@
         👁️ ... visites
     </a>
 </div>
+<!-- PIED DE PAGE COMPLET -->
+<footer id="footerContact" class="site-footer">
+  <h3>🇨🇲 TransPrix Cameroun</h3>
+  <p>
+    La plateforme citoyenne de référence pour estimer en quelques secondes le juste prix des déplacements en moto-taxi et taxi urbain au Cameroun (Douala, Yaoundé, Bafoussam).
+  </p>
+
+  <div class="footer-grid">
+    <div>
+      <h4>Navigation</h4>
+      <a href="#titreApp">Simulateur de prix</a>
+      <a href="#formSuggestion">Proposer un trajet</a>
+      <a href="#boxNumeros">Faire un don</a>
+    </div>
+    <div>
+      <h4>Nous contacter</h4>
+      <a href="https://wa.me" target="_blank">📱 WhatsApp : +237 691 34 68 38</a>
+      <a href="tel:+237682583196">📞 MTN : +237 682 58 31 96</a>
+      <a href="#formSuggestion">✉️ Écrire un message</a>
+    </div>
+  </div>
+
+  <div class="footer-bottom">
+    Tous droits réservés — TransPrix Cameroun 2027 🇨🇲
+  </div>
+</footer>
 <script src="douala.js"></script>
 <script src="yaounde.js"></script>
 <script src="bafoussam.js"></script>    
@@ -431,6 +505,32 @@ function basculerNumeros() {
     document.getElementById("numMOMO").innerText = numerosVisibles ? "682583196" : "68XXXXXXX";
     document.getElementById("indiceToucher").innerText = numerosVisibles ? "🔒 Toucher pour masquer" : "👆 Toucher pour afficher";
 }
+    // --- ANIMATION MENU COULISSANT & CARROUSEL ---
+function ouvrirMenu() {
+  document.getElementById("sideDrawer").classList.add("open");
+  document.getElementById("menuOverlay").style.display = "block";
+}
+function fermerMenu() {
+  document.getElementById("sideDrawer").classList.remove("open");
+  document.getElementById("menuOverlay").style.display = "none";
+}
+function choisirVilleMenu(v) {
+  document.getElementById("selectVille").value = v;
+  changerVille();
+  fermerMenu();
+}
+
+let slideIndex = 0;
+function allerSlide(n) {
+  slideIndex = n;
+  const track = document.getElementById("carouselTrack");
+  const dots = document.querySelectorAll(".dot");
+  if (track) track.style.transform = `translateX(-${slideIndex * 100}%)`;
+  dots.forEach((d, i) => d.classList.toggle("active", i === slideIndex));
+}
+setInterval(() => {
+  allerSlide((slideIndex + 1) % 3);
+}, 4000);
 </script>
 </body>
 </html>
