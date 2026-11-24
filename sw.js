@@ -1,11 +1,15 @@
-const CACHE_NAME = 'transprix-douala-v10';
+const CACHE_NAME = 'transprix-douala-v11';
 const ASSETS = [
   './',
   'index.html',
   'douala.js',
   'yaounde.js',
+  'bafoussam.js',
   'manifest.json',
-  'icon.svg'
+  'icon.svg',
+  'images/douala.jpg',
+  'images/yaounde.jpg',
+  'images/bafoussam.jpg'
 ];
 
 self.addEventListener('install', (event) => {
