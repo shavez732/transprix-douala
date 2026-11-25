@@ -229,65 +229,6 @@ function getLieuxActifs(ville = villeActive) {
 }
 
 function calculerDistanceRoutiereKm(k1, k2, carte) {
-    const p1 = carte[k1], p2 = carte[k2];
-    if (!p1 || !p2) return 6.0;
-    const R = 6371;
-    const dLat = (p2.lat - p1.lat) * Math.PI / 180;
-    const dLon = (p2.lon - p1.lon) * Math.PI / 180;
-    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-              Math.cos(p1.lat * Math.PI / 180) * Math.cos(p2.lat * Math.PI / 180) *
-              Math.sin(dLon / 2) * Math.sin(dLon / 2);
-    const distVolOiseau = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return Math.max(1.0, distVolOiseau * 1.48);
-}
-
-function formaterNomLieu(cle) {
-    return cle.replace(/\b\w/g, l => l.toUpperCase())
-              .replace(/Pk(\d+)/g, "PK$1")
-              .replace(/\b(Iut|Iug|Essec|Ccc|Cnps|Beac|Feicom|Camtel|Enspd|Rmia2|Ifc|Chu|Meec)\b/gi, m => m.toUpperCase());
-}
-
-function preparerDonneesVille(ville, texteCSV) {
-    const carte = getLieuxActifs(ville);
-    const localTarifs = {};
-    const localGraphe = {};
-    const localNoms = new Map();
-
-    Object.keys(carte).forEach(k => {
-        localNoms.set(k, formaterNomLieu(k));
-    });
-
-    const ajouterArete = (dKey, aKey, distKm, bonusAxe) => {
-        if (!localGraphe[dKey]) localGraphe[dKey] = [];
-        if (!localGraphe[aKey]) localGraphe[aKey] = [];
-        localGraphe[dKey].push({ voisin: aKey, distKm: distKm, poids: distKm * bonusAxe });
-        localGraphe[aKey].push({ voisin: dKey, distKm: distKm, poids: distKm * bonusAxe });
-    };
-
-    if (texteCSV) {
-        const lignes = texteCSV.split(/\r?\n/);
-        for (let i = 1; i < lignes.length; i++) {
-            const cols = lignes[i].trim().split(",");
-            if (cols.length >= 4) {
-                const d = cols[0].replace(/^"|"$/g, "").trim();
-                const a = cols[1].replace(/^"|"$/g, "").trim();
-                const m = parseInt(cols[2].replace(/\D/g, ""), 10);
-                const t = parseInt(cols[3].replace(/\D/g, ""), 10);
-                if (d && a && !isNaN(m) && m > 0) {
-                    const dKey = normaliser(d), aKey = normaliser(a);
-                    if (!localNoms.has(dKey)) localNoms.set(dKey, d);
-                    if (!localNoms.has(aKey)) localNoms.set(aKey, a);
-                    localTarifs[dKey + "_" + aKey] = localTarifs[aKey + "_" + dKey] = {
-                        moto: m,
-                        taxi: (!isNaN(t) && t > 0) ? t : m
-                    };
-                    const distKm = calculerDistanceRoutiereKm(dKey, aKey, carte);
-                    const bonusAxe = (carte[dKey]?.axe && carte[aKey]?.axe) ? 0.85 : 1.0;
-                    ajouterArete(dKey, aKey, distKm, bonusAxe);
-                }
-            }
-        }
-function calculerDistanceRoutiereKm(k1, k2, carte) {
   const p1 = carte[k1], p2 = carte[k2];
   if (!p1 || !p2) return null;
   const R = 6371;
@@ -371,29 +312,7 @@ function preparerDonneesVille(ville, texteCSV) {
   };
   if (ville === villeActive) appliquerVilleDepuisMemoire(ville);
 }
-
-function appliquerVilleDepuisMemoire(ville) {
-  const data = memoireVilles[ville];
-  if (!data) return;
-  listeQuartiers = data.listeQuartiers;
-  tarifs = data.tarifs;
-  grapheReseau = data.grapheReseau;
-  mapNomsPropres = data.mapNomsPropres;
-}
-async function chargerDonneesVille(ville = villeActive) {
-  const cfg = villesConfig[ville];
-  const statutEl = document.getElementById("statutChargement");
-  if (!cfg) {
-    statutEl.innerText = "❌ Fichier " + ville + ".js introuvable";
-    statutEl.style.color = "#e74c3c";
-    return;
-  }
-  const cleCache = "transprix_csv_" + ville;
-  const cacheCSV = localStorage.getItem(cleCache);
-  const lienCSV = (cfg.urlCSV && cfg.urlCSV !== "https://google.com") ? cfg.urlCSV : (ville === "douala" ? URL_CSV_DOUALA_SECOURS : "");
-  if (!memoireVilles[ville]) {
-    preparerDonneesVille(ville, cacheCSV);
-
+    
     function appliquerVilleDepuisMemoire(ville) {
     const data = memoireVilles[ville];
     if (!data) return;
@@ -493,7 +412,7 @@ async function estimerTrajetOSRM(departKey, arriveeKey) {
     try { return JSON.parse(enCache); } catch (e) {}
   }
   try {
-    const url = `https://project-osrm.org{p1.lon},${p1.lat};${p2.lon},${p2.lat}?overview=false&steps=true`;
+      const url = `https://project-osrm.org{p1.lon},${p1.lat};${p2.lon},${p2.lat}?overview=false&steps=true`;
     const res = await fetch(url);
     if (!res.ok) return null;
     const data = await res.json();
