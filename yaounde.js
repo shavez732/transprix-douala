@@ -290,7 +290,7 @@ const configYaounde = {
         "quartier nkongoa (soa)": { lat: 3.9625, lon: 11.5825, axe: true },
         // --- NOUVEAUX LIEUX YAOUNDÉ (1/3 : AMBASSADES, MINISTÈRES & INSTITUTIONS) ---
         "ambassade de france au cameroun (plateau atemengue)": { lat: 3.8548, lon: 11.5112, axe: true },
-        "ambassade des états-unis au cameroun (golf - bastos)": { lat: 3.8975, lon: 11.5045, axe: true },
+        "ambassade des états-unis au cameroun (golf - bastos)": { lat: 3.8995, lon: 11.4995, axe: true },
         "haut-commissariat du canada au cameroun (bastos)": { lat: 3.8920, lon: 11.5122, axe: true },
         "haut-commissariat du royaume-uni au cameroun (bastos)": { lat: 3.8935, lon: 11.5118, axe: true },
         "ambassade d'allemagne au cameroun (bastos)": { lat: 3.8902, lon: 11.5138, axe: true },
@@ -308,7 +308,7 @@ const configYaounde = {
         "ambassade du gabon au cameroun (bastos)": { lat: 3.8900, lon: 11.5118, axe: true },
         "ambassade de république centrafricaine au cameroun (bastos)": { lat: 3.8875, lon: 11.5160, axe: true },
         "ambassade de côte d'ivoire au cameroun (bastos)": { lat: 3.8892, lon: 11.5132, axe: true },
-        "nonciature apostolique (ambassade du vatican - mont fébé)": { lat: 3.9020, lon: 11.5035, axe: false },
+        "nonciature apostolique (ambassade du vatican - mont fébé)": { lat: 3.9055, lon: 11.5005, axe: false },
         "ministère des domaines, du cadastre et des affaires foncières (mindcaf)": { lat: 3.8616, lon: 11.5154, axe: true },
         "ministère de l'eau et de l'énergie (minee)": { lat: 3.8606, lon: 11.5148, axe: true },
         "ministère des mines, de l'industrie et du développement technologique (minmidt)": { lat: 3.8610, lon: 11.5144, axe: true },
