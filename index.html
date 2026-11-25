@@ -290,19 +290,21 @@ function preparerDonneesVille(ville, texteCSV) {
       }
     }
   }
-  const cles = Array.from(localNoms.keys());
-  for (let i = 0; i < cles.length; i++) {
-    for (let j = i + 1; j < cles.length; j++) {
-      const k1 = cles[i], k2 = cles[j];
-      if (carte[k1] && carte[k2]) {
+    const cles = Object.keys(carte);
+  cles.forEach(k1 => {
+    const voisins = [];
+    cles.forEach(k2 => {
+      if (k1 !== k2) {
         const dKm = calculerDistanceRoutiereKm(k1, k2, carte);
-        if (dKm !== null && dKm <= 4.5) {
-          const bonus = (carte[k1].axe && carte[k2].axe) ? 0.82 : 1.0;
-          ajouterArete(k1, k2, dKm, bonus);
-        }
+        if (dKm !== null) voisins.push({ k2, dKm });
       }
-    }
-  }
+    });
+    voisins.sort((a, b) => a.dKm - b.dKm);
+    voisins.slice(0, 4).forEach(v => {
+      const bonus = (carte[k1].axe && carte[v.k2].axe) ? 0.82 : 1.0;
+      ajouterArete(k1, v.k2, v.dKm, bonus);
+    });
+  });
   const localListe = Array.from(localNoms.values()).sort((a, b) => a.localeCompare(b, 'fr'));
   memoireVilles[ville] = {
     listeQuartiers: localListe,
@@ -443,8 +445,20 @@ async function estimerTrajetOSRM(departKey, arriveeKey) {
 }
 
 function estimerTrajetPlusCourt(departKey, arriveeKey) {
-    if (!grapheReseau[departKey] || !grapheReseau[arriveeKey]) return null;
-    const carte = getLieuxActifs();
+      const carte = getLieuxActifs();
+  if (!carte[departKey] || !carte[arriveeKey]) return null;
+  const calculDirectGPS = () => {
+    const kmDirect = calculerDistanceRoutiereKm(departKey, arriveeKey, carte);
+    if (kmDirect === null) return null;
+    const prix = villesConfig[villeActive].bareme(kmDirect);
+    return {
+      moto: prix.moto,
+      taxi: prix.taxi,
+      km: kmDirect.toFixed(1),
+      cheminTexte: (mapNomsPropres.get(departKey) || departKey) + " ➔ " + (mapNomsPropres.get(arriveeKey) || arriveeKey)
+    };
+  };
+  if (!grapheReseau[departKey] || !grapheReseau[arriveeKey]) return calculDirectGPS();
     let couts = {}, distReelle = {}, precedents = {}, nonVisites = new Set(Object.keys(grapheReseau));
     nonVisites.forEach(n => { couts[n] = Infinity; distReelle[n] = Infinity; });
     couts[departKey] = 0;
@@ -466,7 +480,7 @@ function estimerTrajetPlusCourt(departKey, arriveeKey) {
             }
         });
     }
-    if (distReelle[arriveeKey] === Infinity) return null;
+      if (distReelle[arriveeKey] === Infinity) return calculDirectGPS();
     let kmDirect = calculerDistanceRoutiereKm(departKey, arriveeKey, carte);
     let kmFinal = Math.min(distReelle[arriveeKey], kmDirect * 1.08);
     const prix = villesConfig[villeActive].bareme(kmFinal);
