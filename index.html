@@ -171,6 +171,9 @@
     <button type="button" onclick="navigator.clipboard.writeText('OM: 691346838 | MoMo: 682583196'); alert('Numéros de don copiés !');" style="background: #2c3e50; margin-top: 8px; font-size: 13px; padding: 9px;">
         📋 Copier les numéros de soutien
     </button>
+<button type="button" onclick="exporterCacheOSRM()" style="background: #16a085; margin-top: 8px; font-size: 12px; padding: 8px;">
+  📥 Exporter le cache OSRM (CSV)
+</button>
 </div>
 
 </div>
@@ -475,6 +478,48 @@ function inverserLieux() {
     arr.value = temp;
     if (dep.value && arr.value) calculerPrix();
 }
+function obtenirCleCacheOSRM(ville, dKey, aKey) {
+  return dKey < aKey ? `transprix_osrm_${ville}_${dKey}_${aKey}` : `transprix_osrm_${ville}_${aKey}_${dKey}`;
+}
+
+async function estimerTrajetOSRM(departKey, arriveeKey) {
+  const carte = getLieuxActifs();
+  const p1 = carte[departKey], p2 = carte[arriveeKey];
+  if (!p1 || !p2) return null;
+
+  const cleCache = obtenirCleCacheOSRM(villeActive, departKey, arriveeKey);
+  const enCache = localStorage.getItem(cleCache);
+  if (enCache) {
+    try { return JSON.parse(enCache); } catch (e) {}
+  }
+  try {
+    const url = `https://project-osrm.org{p1.lon},${p1.lat};${p2.lon},${p2.lat}?overview=false&steps=true`;
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (!data.routes || !data.routes.length) return null;
+
+    const route = data.routes[0];
+    const km = Math.max(1.0, route.distance / 1000);
+    const prix = villesConfig[villeActive].bareme(km);
+    const rues = [];
+    route.legs[0].steps.forEach(s => {
+      if (s.name && s.name.trim() && !rues.includes(s.name.trim())) {
+        rues.push(s.name.trim());
+      }
+    });
+    const resultat = {
+      moto: prix.moto,
+      taxi: prix.taxi,
+      km: km.toFixed(1),
+      cheminTexte: rues.length ? rues.slice(0, 4).join(" ➔ ") : "Axe routier principal (OSRM)"
+    };
+    localStorage.setItem(cleCache, JSON.stringify(resultat));
+    return resultat;
+  } catch (e) {
+    return null;
+  }
+}
 
 function estimerTrajetPlusCourt(departKey, arriveeKey) {
     if (!grapheReseau[departKey] || !grapheReseau[arriveeKey]) return null;
@@ -529,27 +574,55 @@ document.addEventListener("click", (e) => {
         document.getElementById("optionsArrivee").style.display = "none";
     }
 });
+async function calculerPrix() {
+  const d = document.getElementById("searchDepart").value.trim(), a = document.getElementById("searchArrivee").value.trim();
+  const dKey = normaliser(d), aKey = normaliser(a);
+  if (!d || !a || dKey === aKey) { alert("Sélectionnez deux quartiers différents."); return; }
 
-function calculerPrix() {
-    const d = document.getElementById("searchDepart").value.trim(), a = document.getElementById("searchArrivee").value.trim();
-    const dKey = normaliser(d), aKey = normaliser(a);
-    if (!d || !a || dKey === aKey) { alert("Sélectionnez deux quartiers différents."); return; }
-    const off = tarifs[dKey + "_" + aKey], est = estimerTrajetPlusCourt(dKey, aKey);
-    if (!off && !est) { alert("L'un de ces lieux n'est pas répertorié."); return; }
-    document.getElementById("blocOfficiel").style.display = off ? "block" : "none";
-    if (off) {
-        document.getElementById("prixMotoOfficiel").innerText = "🏍️ Moto : " + off.moto + " FCFA";
-        document.getElementById("prixTaxiOfficiel").innerText = "🚖 Taxi : " + off.taxi + " FCFA";
-    }
-    document.getElementById("blocEstime").style.display = est ? "block" : "none";
-    if (est) {
-        document.getElementById("prixMotoEstime").innerText = "🏍️ Moto : ~" + est.moto + " FCFA";
-        document.getElementById("prixTaxiEstime").innerText = "🚖 Taxi : ~" + est.taxi + " FCFA";
-        document.getElementById("detailEscale").innerText = "Distance estimée : ~" + est.km + " km • Axes : " + est.cheminTexte;
-    }
-    document.getElementById("resultatBox").style.display = "block";
-    textePartageGlobal = "Tarif TransPrix " + villesConfig[villeActive].nom + " (" + d + " ➡️ " + a + ") :\n" + (off ? "✅ Officiel : Moto " + off.moto + " F | Taxi " + off.taxi + " F\n" : "") + (est ? "🗺️ Estimé (~" + est.km + " km) : Moto ~" + est.moto + " F | Taxi ~" + est.taxi + " F\n" : "") + "\nSimule ici : https://shavez732.github.io/transprix-douala/";
+  const off = tarifs[dKey + "_" + aKey];
+  let est = await estimerTrajetOSRM(dKey, aKey);
+  if (!est) est = estimerTrajetPlusCourt(dKey, aKey);
+
+  if (!off && !est) { alert("L'un de ces lieux n'est pas répertorié."); return; }
+  document.getElementById("blocOfficiel").style.display = off ? "block" : "none";
+  if (off) {
+    document.getElementById("prixMotoOfficiel").innerText = "🏍 Moto : " + off.moto + " FCFA";
+    document.getElementById("prixTaxiOfficiel").innerText = "🚖 Taxi : " + off.taxi + " FCFA";
+  }
+
+  document.getElementById("blocEstime").style.display = est ? "block" : "none";
+  if (est) {
+    document.getElementById("prixMotoEstime").innerText = "🏍 Moto : ~" + est.moto + " FCFA";
+    document.getElementById("prixTaxiEstime").innerText = "🚖 Taxi : ~" + est.taxi + " FCFA";
+    document.getElementById("detailEscale").innerText = "Distance estimée : ~" + est.km + " km • Axes : " + est.cheminTexte;
+  }
+
+  document.getElementById("resultatBox").style.display = "block";
+  textePartageGlobal = "Tarif TransPrix " + villesConfig[villeActive].nom + " (" + d + " ➡ " + a + ") :\n" +
+    (off ? "✅ Officiel : Moto " + off.moto + " F | Taxi " + off.taxi + " F\n" : "") +
+    (est ? "🗺 Estimé (~" + est.km + " km) : Moto ~" + est.moto + " F | Taxi ~" + est.taxi + " F\n" : "") +
+    "\nSimule ici : https://shavez732.github.io/transprix-douala/index.html";
 }
+function exporterCacheOSRM() {
+  let lignesCSV = ["Ville,Depart,Arrivee,Moto_FCFA,Taxi_FCFA,Distance_Km,Axes"];
+  for (let i = 0; i < localStorage.length; i++) {
+    const cle = localStorage.key(i);
+    if (cle && cle.startsWith("transprix_osrm_")) {
+      const parties = cle.replace("transprix_osrm_", "").split("_");
+      const data = JSON.parse(localStorage.getItem(cle));
+      if (parties.length >= 3 && data) {
+        lignesCSV.push(`${parties[0]},${parties[1]},${parties[2]},${data.moto},${data.taxi},${data.km},"${data.cheminTexte}"`);
+      }
+    }
+  }
+  if (lignesCSV.length === 1) { alert("Aucun trajet OSRM en cache pour le moment."); return; }
+  const blob = new Blob([lignesCSV.join("\n")], { type: "text/csv;charset=utf-8;" });
+  const lien = document.createElement("a");
+  lien.href = URL.createObjectURL(blob);
+  lien.download = "cache_osrm_transprix.csv";
+  lien.click();
+}
+
 
 function partagerTarif() {
     if (navigator.share) navigator.share({ title: 'TransPrix', text: textePartageGlobal });
