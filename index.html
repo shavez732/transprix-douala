@@ -491,6 +491,11 @@ function estimerTrajetPlusCourt(departKey, arriveeKey) {
 
 function filtrerQuartiers(type) {
     const input = document.getElementById("search" + type), box = document.getElementById("options" + type), txt = normaliser(input.value);
+      if (txt === "admincsv") {
+    document.getElementById("btnExportOSRM").style.display = "block";
+    box.style.display = "none";
+    return;
+  }
     box.innerHTML = "";
     if (!txt) { box.style.display = "none"; return; }
     const matchs = listeQuartiers.filter(q => normaliser(q).includes(txt));
