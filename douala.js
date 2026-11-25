@@ -12,7 +12,6 @@ const configDouala = {
     },
     lieux: {
         // --- BASE D'ORIGINE (1/3) ---
-        "total nkolbong (yassa)": { lat: 3.9980, lon: 9.8160, axe: true },
                 "total nkolbong (yassa)": { lat: 4.0175, lon: 9.7962, axe: true },
     "carrefour yassa": { lat: 4.0006, lon: 9.8053, axe: true },
     "yassa": { lat: 4.0006, lon: 9.8053, axe: true },
