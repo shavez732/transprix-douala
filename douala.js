@@ -375,7 +375,7 @@ const configDouala = {
         "consulat général du nigéria à douala (bonapriso)": { lat: 4.0265, lon: 9.6992, axe: true },
         "consulat du tchad à douala (bonapriso)": { lat: 4.0258, lon: 9.6985, axe: true },
         "consulat de guinée équatoriale à douala (bonapriso)": { lat: 4.0272, lon: 9.7005, axe: true },
-        "consulat de côte d'ivoire à douala (bonanjo)": { lat: 4.0415, lon: 9.6908, axe: true },
+            "consulat de côte d'ivoire à douala (bonapriso)": { lat: 4.0265, lon: 9.6990, axe: true },
         "consulat du sénégal à douala (akwa)": { lat: 4.0502, lon: 9.7015, axe: true },
         "consulat du mali à douala (akwa)": { lat: 4.0495, lon: 9.7022, axe: true },
         "consulat d'italie à douala (bonapriso)": { lat: 4.0248, lon: 9.6978, axe: true },
