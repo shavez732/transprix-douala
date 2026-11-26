@@ -6,7 +6,7 @@ const configDouala = {
         if (km <= 5.5) return { moto: 200, taxi: 200 };
         if (km <= 8.0) return { moto: 300, taxi: 300 };
         if (km <= 10.5) return { moto: 400, taxi: 400 };
-        if (km <= 15.8) return { moto: 400, taxi: 400 };
+        if (km <= 15.8) return { moto: 500, taxi: 500 };
         if (km <= 18.0) return { moto: 600, taxi: 600 };
         if (km <= 23.0) return { moto: 700, taxi: 750 };
         return { moto: 800, taxi: 800 };
