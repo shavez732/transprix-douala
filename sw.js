@@ -1,4 +1,4 @@
-const CACHE_NAME = 'transprix-douala-v13';
+const CACHE_NAME = 'transprix-douala-v14';
 const ASSETS = [
   './',
   'index.html',
