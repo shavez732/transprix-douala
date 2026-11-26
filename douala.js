@@ -12,13 +12,13 @@ const configDouala = {
     },
     lieux: {
         // --- BASE D'ORIGINE (1/3) ---
-    "carrefour yassa": { lat: 4.0006, lon: 9.8053, axe: true },
-    "yassa": { lat: 4.0006, lon: 9.8053, axe: true },
-    "stade de japoma": { lat: 4.0028, lon: 9.8245, axe: false },
-    "  "carrefour ari (yassa)": { lat: 3.9708, lon: 9.8135, axe: true },
+      "carrefour yassa": { lat: 4.0006, lon: 9.8053, axe: true },
+  "yassa": { lat: 4.0006, lon: 9.8053, axe: true },
+  "stade de japoma": { lat: 4.0028, lon: 9.8245, axe: false },
+  "carrefour ari (yassa)": { lat: 3.9708, lon: 9.8135, axe: true },
   "carrefour nyalla (rails)": { lat: 4.0342, lon: 9.7769, axe: true },
   "nyalla château": { lat: 4.0326, lon: 9.7882, axe: true },
-        nyalla": { lat: 4.0245, lon: 9.7765, axe: true },
+  "nyalla": { lat: 4.0342, lon: 9.7769, axe: true },
         "elf village": { lat: 4.0260, lon: 9.7580, axe: true },
         "marché de village": { lat: 4.0290, lon: 9.7540, axe: false },
         "ndogpassi": { lat: 4.0150, lon: 9.7600, axe: false },
