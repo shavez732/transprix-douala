@@ -2,9 +2,9 @@ const configDouala = {
     nom: "Douala",
     urlCSV: "https://docs.google.com/spreadsheets/d/e/2PACX-1vSq9OEZUP1AT0zs08bc4G3Z4gmirf0g8tRq0WztCRCXsOfMf_tZTZI9qupwPm-8sPMDvGvHnTzGjaCo/pub?output=csv",
     bareme: function(km) {
-        if (km <= 2.5) return { moto: 150, taxi: 200 };
-        if (km <= 5.5) return { moto: 250, taxi: 250 };
-        if (km <= 10.5) return { moto: 350, taxi: 300 };
+        if (km <= 2.5) return { moto: 100, taxi: 100 };
+        if (km <= 5.5) return { moto: 200, taxi: 200 };
+        if (km <= 10.5) return { moto: 300, taxi: 300 };
         if (km <= 15.8) return { moto: 400, taxi: 350 };
         if (km <= 19.0) return { moto: 500, taxi: 550 };
         if (km <= 23.0) return { moto: 600, taxi: 650 };
@@ -12,13 +12,13 @@ const configDouala = {
     },
     lieux: {
         // --- BASE D'ORIGINE (1/3) ---
-    "station totalenergies mbanga bakoko (total nkolbong)": { lat: 4.0175, lon: 9.7962, axe: true },
     "carrefour yassa": { lat: 4.0006, lon: 9.8053, axe: true },
     "yassa": { lat: 4.0006, lon: 9.8053, axe: true },
-    "carrefour ari (yassa)": { lat: 4.0085, lon: 9.7980, axe: true },
     "stade de japoma": { lat: 4.0028, lon: 9.8245, axe: false },
-    "carrefour nyalla": { lat: 4.0245, lon: 9.7765, axe: true },
-    "nyalla château": { lat: 4.0325, lon: 9.7719, axe: true },
+    "  "carrefour ari (yassa)": { lat: 3.9708, lon: 9.8135, axe: true },
+  "carrefour nyalla": { lat: 4.0342, lon: 9.7769, axe: true },
+  "nyalla château": { lat: 4.0326, lon: 9.7882, axe: true },
+        nyalla": { lat: 4.0245, lon: 9.7765, axe: true },
         "elf village": { lat: 4.0260, lon: 9.7580, axe: true },
         "marché de village": { lat: 4.0290, lon: 9.7540, axe: false },
         "ndogpassi": { lat: 4.0150, lon: 9.7600, axe: false },
@@ -424,7 +424,7 @@ const configDouala = {
         "carrefour école publique de deido": { lat: 4.0632, lon: 9.7120, axe: true },
         "carrefour ancien abattoir (bonabéri)": { lat: 4.0728, lon: 9.6820, axe: true },
         "carrefour mambanda (terminus bonabéri)": { lat: 4.0925, lon: 9.6485, axe: true },
-        "carrefour nyalla pariso": { lat: 4.0340, lon: 9.7680, axe: true },
+        "carrefour nyalla pariso": { lat: 4.0243, lon: 9.7932, axe: true },
         "marché central de douala (new-bell)": { lat: 4.0365, lon: 9.7085, axe: true },
         "marché mboppi (akwa-nord)": { lat: 4.0485, lon: 9.7185, axe: true },
         "marché sandaga (akwa)": { lat: 4.0475, lon: 9.7025, axe: true },
