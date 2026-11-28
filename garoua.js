@@ -1,6 +1,6 @@
 const configGaroua = {
   nom: "Garoua",
-  urlCSV: "",
+  urlCSV: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTQna3NGjOY6SunlUDO9cUd93GwxpRJ33iB882SyF8yzPZXFUEG-plI-V24OiFKoKFxwoXsW0VG2ad4/pub?output=csv",
   bareme: function(km) {
     if (km <= 2.5) return { moto: 100, taxi: 100 };
     if (km <= 5.5) return { moto: 200, taxi: 200 };
