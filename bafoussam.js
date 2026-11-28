@@ -2,13 +2,18 @@ const configBafoussam = {
   nom: "Bafoussam",
   urlCSV: "https://docs.google.com/spreadsheets/d/e/2PACX-1vT-MBVdqgowEtazoF95NsqBYs869SUVEZcGFoFSfBM6Wd-ltNwtlShpMbVcu7A2iCdrMR2G-zNHnbw1/pub?output=csv",
   bareme: function(km) {
-    if (km <= 2.5) return { moto: 100, taxi: 150 };
+    if (km <= 2.5) return { moto: 100, taxi: 100 };
     if (km <= 5.5) return { moto: 200, taxi: 200 };
-    if (km <= 10.5) return { moto: 300, taxi: 250 };
-    if (km <= 15.8) return { moto: 350, taxi: 300 };
-    if (km <= 19.0) return { moto: 450, taxi: 500 };
-    if (km <= 23.0) return { moto: 550, taxi: 600 };
-    return { moto: 650, taxi: 700 };
+    if (km <= 8.0) return { moto: 300, taxi: 300 };
+    if (km <= 10.5) return { moto: 400, taxi: 400 };
+    if (km <= 15.8) return { moto: 500, taxi: 500 };
+    if (km <= 18.0) return { moto: 600, taxi: 600 };
+    if (km <= 23.0) return { moto: 700, taxi: 750 };
+    if (km <= 28.0) return { moto: 850, taxi: 900 };
+    if (km <= 34.0) return { moto: 1000, taxi: 1050 };
+    if (km <= 40.0) return { moto: 1150, taxi: 1200 };
+    if (km <= 45.0) return { moto: 1300, taxi: 1350 };
+    return { moto: 1500, taxi: 1500 };
   },
   lieux: {
     "marché a de bafoussam (marché central)": { lat: 5.4778, lon: 10.4176, axe: true },
